@@ -5,7 +5,7 @@ set(PICO_PLATFORM rp2040)
 
 include(pico_sdk_import.cmake)
 
-project(131-hello-usb)
+project(121_blink_reg)
 
 pico_sdk_init()
 
