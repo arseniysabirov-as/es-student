@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "hardware/regs/addressmap.h"
@@ -22,8 +23,11 @@ void set_led(bool on)
 
 int main()
 {
+    stdio_init_all();
+
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
+
     gpio_init(BUTTON_PIN);
     gpio_set_dir(BUTTON_PIN, GPIO_IN);
     gpio_pull_up(BUTTON_PIN);
@@ -35,6 +39,8 @@ int main()
    volatile uint32_t *gpio_out_clr = (uint32_t *)(SIO_BASE + SIO_GPIO_OUT_CLR_OFFSET);
    const uint32_t led_mask = 1u << LED_PIN;
 
+   set_led(led);
+
   while (1)
     {
         bool current = get_button_debounce(BUTTON_PIN);
@@ -42,7 +48,7 @@ int main()
         if (previous == true && current == false)
         {
             led = !led;
-            gpio_put(LED_PIN, led);
+            set_led(led);
         }
 
         previous = current;
