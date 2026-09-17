@@ -9,11 +9,11 @@
    0.550 --> d
    0.600 <-- led off
    4.000 --> e
-   5.050 <-- led on
+   4.050 <-- led on
    7.000 --> e
-   8.050 <-- led on
+   7.050 <-- led on
    8.550 --> d
-   9.600 <-- led off   
+   8.600 <-- led off   
    11.750 --> x
-   12.800 <-- unknown command: x
+   11.800 <-- unknown command: x
 итог: отправлено команд 6
