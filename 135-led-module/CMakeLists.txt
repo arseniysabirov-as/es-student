@@ -9,12 +9,13 @@ project(135_led_module)
 
 pico_sdk_init()
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-    DEVICE_BOARD="${PICO_BOARD}"
+add_executable(${PROJECT_NAME}
+    ${CMAKE_CURRENT_SOURCE_DIR}/main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/led/led.c
 )
 
-add_executable(${PROJECT_NAME}
-   ${CMAKE_CURRENT_SOURCE_DIR}/main.c
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/led
 )
 
 target_link_libraries(${PROJECT_NAME}

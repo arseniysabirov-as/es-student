@@ -5,7 +5,6 @@
 #include "hardware/regs/sio.h"
 #include "led.h"
 
-const uint LED_PIN = 25;
 const uint BUTTON_PIN = 15;
 const uint DEBOUNCE_MS = 20;
 
@@ -16,38 +15,29 @@ bool get_button_debounce(uint pin)
     return state && gpio_get(pin);
 }
 
-void set_led(bool on)
-{
-    gpio_put(LED_PIN, on);
-    printf("led %s\n", on ? "on" : "off");
-}
-
-bool handle_command(int command, bool led)
+void handle_command(int command)
 {
     if (command == 'e')
     {
-        led = true;
-        set_led(led);
+        led_set(true);
+        printf("led %s\n", led_is_on() ? "on" : "off");
     }
     else if (command == 'd')
     {
-        led = false;
-        set_led(led);
+        led_set(false);
+        printf("led %s\n", led_is_on() ? "on" : "off");
     }
     else
     {
         printf("unknown command: %c\n", command);
     }
-
-    return led;
 }
 
 int main()
 {
     stdio_init_all();
 
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
+    led_init();
 
     gpio_init(BUTTON_PIN);
     gpio_set_dir(BUTTON_PIN, GPIO_IN);
@@ -58,18 +48,18 @@ int main()
 
    volatile uint32_t *gpio_out_set = (uint32_t *)(SIO_BASE + SIO_GPIO_OUT_SET_OFFSET);
    volatile uint32_t *gpio_out_clr = (uint32_t *)(SIO_BASE + SIO_GPIO_OUT_CLR_OFFSET);
-   const uint32_t led_mask = 1u << LED_PIN;
+  // const uint32_t led_mask = 1u << LED_PIN;
 
-   set_led(led);
+
 
   while (1)
     {
         bool current = get_button_debounce(BUTTON_PIN);
 
-        if (previous == true && current == false)
+       if (previous == true && current == false)
         {
-            led = !led;
-            set_led(led);
+            led_toggle();
+            printf("led %s\n", led_is_on() ? "on" : "off");
         }
 
         previous = current;
@@ -81,6 +71,6 @@ int main()
             continue;
         }
 
-        led = handle_command(command, led);
+        handle_command(command);
     }
 }
