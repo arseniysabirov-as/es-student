@@ -3,6 +3,7 @@
 #include "hardware/regs/addressmap.h"
 #include "hardware/regs/sio.h"
 #include "led.h"
+#include "log.h"
 
 const uint BUTTON_PIN = 15;
 const uint DEBOUNCE_MS = 20;
@@ -26,10 +27,15 @@ void handle_command(int command)
         led_set(false);
         printf("led %s\n", led_is_on() ? "on" : "off");
     }
+    else if (command == 'v')
+    {
+        log_version();
+    }
     else
     {
         printf("unknown command: %c\n", command);
     }
+    
 }
 
 int main()
@@ -68,7 +74,7 @@ int main()
         {
             continue;
         }
-
+        LOG_DBG("got %c\n", command);
         handle_command(command);
     }
 }
