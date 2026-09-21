@@ -33,7 +33,7 @@ void handle_command(int command)
     }
     else
     {
-        LOG_INF("unknown command: %c\n", command);
+        LOG_ERR("unknown command: %c\n", command);
     }
     
 }
