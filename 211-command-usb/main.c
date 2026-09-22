@@ -1,5 +1,6 @@
 #define LINE_SIZE 32
 #include <stdio.h>
+#include <string.h>
 #include "pico/stdlib.h"
 #include "hardware/regs/addressmap.h"
 #include "hardware/regs/sio.h"
@@ -20,7 +21,7 @@ bool get_button_debounce(uint pin)
     return state && gpio_get(pin);
 }
 
-void handle_command(int command)
+void handle_command(const char *command)
 {
     if (strcmp(command, "enable") == 0)
     {
@@ -74,7 +75,7 @@ void read_line(void)
     if (line_length + 1 < LINE_SIZE)
     {
         line[line_length] = (char)symbol;
-        line_length = line_length + 1;
+        line_length++;
         putchar(symbol);
     }
 }
@@ -89,15 +90,10 @@ int main()
     gpio_set_dir(BUTTON_PIN, GPIO_IN);
     gpio_pull_up(BUTTON_PIN);
 
-    bool led = false;
+    
     bool previous = false;
 
-   volatile uint32_t *gpio_out_set = (uint32_t *)(SIO_BASE + SIO_GPIO_OUT_SET_OFFSET);
-   volatile uint32_t *gpio_out_clr = (uint32_t *)(SIO_BASE + SIO_GPIO_OUT_CLR_OFFSET);
-
-
-
-  while (1)
+   while (1)
     {
         bool current = get_button_debounce(BUTTON_PIN);
 
@@ -109,6 +105,6 @@ int main()
 
         previous = current;
 
-        void read_line(void)
+        read_line();
     }
 }

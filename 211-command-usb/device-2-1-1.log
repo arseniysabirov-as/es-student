@@ -3,85 +3,26 @@
 устройство: 2e8a:000a
 серийный номер: 5054316520DB8A1C
 порт: COM7
-начало: 2026-09-22T13:47:43
+начало: 2026-09-22T15:04:29
    0.000 --> enable
-   0.016 <-- dbg main:82 got e
-   0.017 <-- inf handle_command:24 led on
-   0.037 <-- dbg main:82 got n
-   0.038 <-- err handle_command:41 unknown command: n
-   0.057 <-- dbg main:82 got a
-   0.057 <-- err handle_command:41 unknown command: a
-   0.077 <-- dbg main:82 got b
-   0.078 <-- err handle_command:41 unknown command: b
-   0.097 <-- dbg main:82 got l
-   0.098 <-- err handle_command:41 unknown command: l
-   0.118 <-- dbg main:82 got e
-   0.118 <-- inf handle_command:24 led on
-   0.138 <-- dbg main:82 got
-   0.139 <-- err handle_command:41 unknown command:
-   2.167 --> disable
-   2.178 <-- dbg main:82 got d
-   2.179 <-- inf handle_command:29 led off
-   2.198 <-- dbg main:82 got i
-   2.199 <-- project: 211-command-usb
-   2.200 <-- repo: https://github.com/arseniysabirov-as/es-student
-   2.200 <-- board: pico
-   2.200 <-- serial: 5054316520DB8A1C
-   2.201 <-- chip: manufacturer 0x927, part 0x0000, revision 2
-   2.219 <-- dbg main:82 got s
-   2.220 <-- err handle_command:41 unknown command: s
-   2.239 <-- dbg main:82 got a
-   2.240 <-- err handle_command:41 unknown command: a
-   2.259 <-- dbg main:82 got b
-   2.260 <-- err handle_command:41 unknown command: b
-   2.279 <-- dbg main:82 got l
-   2.280 <-- err handle_command:41 unknown command: l
-   2.300 <-- dbg main:82 got e
-   2.300 <-- inf handle_command:24 led on
-   2.320 <-- dbg main:82 got
-   2.320 <-- err handle_command:41 unknown command:
-   4.361 --> info
-   4.380 <-- dbg main:82 got i
-   4.381 <-- project: 211-command-usb
-   4.381 <-- repo: https://github.com/arseniysabirov-as/es-student
-   4.382 <-- board: pico
-   4.382 <-- serial: 5054316520DB8A1C
-   4.383 <-- chip: manufacturer 0x927, part 0x0000, revision 2
-   4.401 <-- dbg main:82 got n
-   4.401 <-- err handle_command:41 unknown command: n
-   4.421 <-- dbg main:82 got f
-   4.422 <-- err handle_command:41 unknown command: f
-   4.441 <-- dbg main:82 got o
-   4.442 <-- err handle_command:41 unknown command: o
-   4.461 <-- dbg main:82 got
-   4.462 <-- err handle_command:41 unknown command:
-   6.484 --> nosuchcommand
-   6.502 <-- dbg main:82 got n
-   6.502 <-- err handle_command:41 unknown command: n
-   6.522 <-- dbg main:82 got o
-   6.523 <-- err handle_command:41 unknown command: o
-   6.542 <-- dbg main:82 got s
-   6.543 <-- err handle_command:41 unknown command: s
-   6.562 <-- dbg main:82 got u
-   6.563 <-- err handle_command:41 unknown command: u
-   6.583 <-- dbg main:82 got c
-   6.583 <-- err handle_command:41 unknown command: c
-   6.603 <-- dbg main:82 got h
-   6.603 <-- err handle_command:41 unknown command: h
-   6.623 <-- dbg main:82 got c
-   6.624 <-- err handle_command:41 unknown command: c
-   6.643 <-- dbg main:82 got o
-   6.644 <-- err handle_command:41 unknown command: o
-   6.663 <-- dbg main:82 got m
-   6.664 <-- err handle_command:41 unknown command: m
-   6.684 <-- dbg main:82 got m
-   6.685 <-- err handle_command:41 unknown command: m
-   6.704 <-- dbg main:82 got a
-   6.705 <-- err handle_command:41 unknown command: a
-   6.724 <-- dbg main:82 got n
-   6.725 <-- err handle_command:41 unknown command: n
-   6.744 <-- dbg main:82 got d
-   6.745 <-- inf handle_command:29 led off
-   6.764 <-- dbg main:82 got
-   6.765 <-- err handle_command:41 unknown command:
-итог: отправлено команд 4, принято строк 76
+   0.136 <-- enable
+   0.137 <-- dbg read_line:67 got enable
+   0.137 <-- inf handle_command:29 led on
+   2.172 --> disable
+   2.316 <-- disable
+   2.317 <-- dbg read_line:67 got disable
+   2.317 <-- inf handle_command:34 led off
+   4.348 --> info
+   4.437 <-- info
+   4.437 <-- dbg read_line:67 got info
+   4.438 <-- project: 211-command-usb
+   4.439 <-- repo: https://github.com/arseniysabirov-as/es-student
+   4.439 <-- board: pico
+   4.439 <-- serial: 5054316520DB8A1C
+   4.440 <-- chip: manufacturer 0x927, part 0x0000, revision 2
+   4.441 <-- pico-sdk: 2.3.0
+   6.472 --> nosuchcommand
+   6.738 <-- nosuchcommand
+   6.739 <-- dbg read_line:67 got nosuchcommand
+   6.739 <-- err handle_command:46 unknown command: nosuchcommand
+итог: отправлено команд 4, принято строк 17
