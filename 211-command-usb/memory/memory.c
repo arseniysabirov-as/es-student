@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "hardware/regs/addressmap.h"
 #include "pico/stdlib.h"
+#include "../command.h"     // commands[], command_count
+#include "device.h"      // DEVICE_NAME, FIRMWARE_VERSION, ...
 
+
+int main(void);
 // Символы, которые расставляет компоновщик.
 // Это адреса, поэтому берём их через &.
 extern char __flash_binary_start;
@@ -17,6 +22,11 @@ extern char __bss_end__;
 extern char __HeapLimit;
 extern char __StackBottom;
 extern char __StackTop;
+
+uint32_t data_variable = 100;
+uint32_t bss_variable;
+
+
 
 static void row(const char *name, uintptr_t start, uintptr_t end)
 {
@@ -80,4 +90,74 @@ void mem_info(void)
     printf("  %-13s%7u for heap and %u for stack\n",
            "ram free",    (unsigned)heap_size,
            (unsigned)stack_size);
+}
+
+// ═════════════════════════════════════════════════════════
+//  fw_info — карта прошивки: адреса и значения
+// ═════════════════════════════════════════════════════════
+void fw_info(void)
+{
+    // Считаем вызов: data_variable и bss_variable на единицу больше
+    data_variable++;
+    bss_variable++;
+    // Адреса функций со сброшенным признаком Thumb
+    uint16_t *main_code = (uint16_t *)((uintptr_t)main & ~1u);
+    uint16_t *fw_code   = (uint16_t *)((uintptr_t)fw_info & ~1u);
+
+    // Локальная переменная (стек) и блок из кучи
+    uint32_t  stack_variable = 1946;
+    uint32_t *heap_variable  = malloc(sizeof(uint32_t));
+    if (heap_variable != NULL)
+    {
+        *heap_variable = 1951;
+    }
+
+    // ─── шапка ────────────────────────────────────────────
+    printf("%-18s %-12s %s\n", "object", "address", "value");
+    printf("--------------------------------------------------\n");
+
+    // ─── функции ──────────────────────────────────────────
+    printf("%-18s 0x%08x   0x%04x\n",
+           "main",    (unsigned)(uintptr_t)main,    *main_code);
+    printf("%-18s 0x%08x   0x%04x\n",
+           "fw_info", (unsigned)(uintptr_t)fw_info, *fw_code);
+
+    // ─── таблица команд ───────────────────────────────────
+    printf("%-18s 0x%08x\n",
+           "commands", (unsigned)(uintptr_t)commands);
+    printf("%-18s 0x%08x   %u\n",
+           "command_count", (unsigned)(uintptr_t)&command_count, command_count);
+    for (uint i = 0; i < command_count; i++)
+    {
+        printf("  %-16s 0x%08x\n",
+               commands[i].name,
+               (unsigned)(uintptr_t)commands[i].handler);
+    }
+
+    // ─── константы паспорта (строки — их имена уже адреса) ─
+    printf("%-18s 0x%08x   %s\n",
+           "DEVICE_PROJECT", (unsigned)(uintptr_t)DEVICE_PROJECT, DEVICE_PROJECT);
+    printf("%-18s 0x%08x   %s\n",
+           "DEVICE_REPO",    (unsigned)(uintptr_t)DEVICE_REPO,    DEVICE_REPO);
+    printf("%-18s 0x%08x   %s\n",
+           "DEVICE_BOARD",   (unsigned)(uintptr_t)DEVICE_BOARD,   DEVICE_BOARD);
+
+    // ─── переменные в .data и .bss ─────────────────────────
+    printf("%-18s 0x%08x   %u\n",
+           "data_variable", (unsigned)(uintptr_t)&data_variable, data_variable);
+    printf("%-18s 0x%08x   %u\n",
+           "bss_variable",  (unsigned)(uintptr_t)&bss_variable,  bss_variable);
+
+    // ─── стек и куча ──────────────────────────────────────
+    printf("%-18s 0x%08x   %u\n",
+           "stack_variable", (unsigned)(uintptr_t)&stack_variable, stack_variable);
+    if (heap_variable != NULL)
+    {
+        // Внимание: печатаем сам указатель (адрес блока), а не &heap_variable
+        printf("%-18s 0x%08x   %u\n",
+               "heap_variable", (unsigned)(uintptr_t)heap_variable, *heap_variable);
+    }
+
+    // Взяли у кучи — верните
+    free(heap_variable);
 }

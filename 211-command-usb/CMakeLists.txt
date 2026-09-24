@@ -10,6 +10,7 @@ project(211_command_usb)
 pico_sdk_init()
 
 add_executable(${PROJECT_NAME}
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/led/led.c
     ${CMAKE_CURRENT_SOURCE_DIR}/logging/log.c

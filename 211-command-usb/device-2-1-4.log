@@ -1,0 +1,76 @@
+задание: 2.1.4
+проект: 211-command-usb
+устройство: 2e8a:000a
+серийный номер: 5054316520DB8A1C
+порт: COM7
+начало: 2026-09-24T15:46:34
+   0.000 --> fw_info
+   0.154 <-- fw_info
+   0.155 <-- dbg read_line:114 got fw_info
+   0.155 <-- object             address      value
+   0.156 <-- --------------------------------------------------
+   0.157 <-- main               0x10000329   0xb5f0
+   0.158 <-- fw_info            0x1000069d   0x4b47
+   0.158 <-- commands           0x10007c98
+   0.159 <-- command_count      0x10007c94   7
+   0.159 <-- enable           0x10000281
+   0.160 <-- disable          0x100002bd
+   0.160 <-- info             0x100002f9
+   0.161 <-- version          0x10000301
+   0.161 <-- ping             0x10000309
+   0.162 <-- mem_info         0x10000319
+   0.162 <-- fw_info          0x10000321
+   0.163 <-- DEVICE_PROJECT     0x10007774   211-command-usb
+   0.164 <-- DEVICE_REPO        0x10007794   https://github.com/arseniysabirov-as/es-student
+   0.165 <-- DEVICE_BOARD       0x100077d0   pico
+   0.165 <-- data_variable      0x20000f40   101
+   0.166 <-- bss_variable       0x20001f0c   1
+   0.166 <-- stack_variable     0x20041f74   1946
+   0.167 <-- heap_variable      0x20002408   1951
+   2.183 --> fw_info
+   2.337 <-- fw_info
+   2.337 <-- dbg read_line:114 got fw_info
+   2.338 <-- object             address      value
+   2.339 <-- --------------------------------------------------
+   2.339 <-- main               0x10000329   0xb5f0
+   2.340 <-- fw_info            0x1000069d   0x4b47
+   2.340 <-- commands           0x10007c98
+   2.341 <-- command_count      0x10007c94   7
+   2.341 <-- enable           0x10000281
+   2.342 <-- disable          0x100002bd
+   2.343 <-- info             0x100002f9
+   2.343 <-- version          0x10000301
+   2.344 <-- ping             0x10000309
+   2.344 <-- mem_info         0x10000319
+   2.344 <-- fw_info          0x10000321
+   2.345 <-- DEVICE_PROJECT     0x10007774   211-command-usb
+   2.346 <-- DEVICE_REPO        0x10007794   https://github.com/arseniysabirov-as/es-student
+   2.347 <-- DEVICE_BOARD       0x100077d0   pico
+   2.347 <-- data_variable      0x20000f40   102
+   2.348 <-- bss_variable       0x20001f0c   2
+   2.348 <-- stack_variable     0x20041f74   1946
+   2.349 <-- heap_variable      0x20002408   1951
+   4.384 --> fw_info
+   4.539 <-- fw_info
+   4.540 <-- dbg read_line:114 got fw_info
+   4.540 <-- object             address      value
+   4.541 <-- --------------------------------------------------
+   4.542 <-- main               0x10000329   0xb5f0
+   4.542 <-- fw_info            0x1000069d   0x4b47
+   4.543 <-- commands           0x10007c98
+   4.543 <-- command_count      0x10007c94   7
+   4.544 <-- enable           0x10000281
+   4.544 <-- disable          0x100002bd
+   4.545 <-- info             0x100002f9
+   4.545 <-- version          0x10000301
+   4.546 <-- ping             0x10000309
+   4.547 <-- mem_info         0x10000319
+   4.547 <-- fw_info          0x10000321
+   4.548 <-- DEVICE_PROJECT     0x10007774   211-command-usb
+   4.549 <-- DEVICE_REPO        0x10007794   https://github.com/arseniysabirov-as/es-student
+   4.549 <-- DEVICE_BOARD       0x100077d0   pico
+   4.550 <-- data_variable      0x20000f40   103
+   4.550 <-- bss_variable       0x20001f0c   3
+   4.551 <-- stack_variable     0x20041f74   1946
+   4.551 <-- heap_variable      0x20002408   1951
+итог: отправлено команд 3, принято строк 66
