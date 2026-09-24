@@ -79,7 +79,7 @@ const uint command_count = sizeof(commands) / sizeof(commands[0]);
 
 void handle_command(const char *command)
 {
-    for (uint i = 0; i < command_count; i++)   // <-- было COMMAND_COUNT
+    for (uint i = 0; i < command_count; i++)
     {
         if (strcmp(command, commands[i].name) == 0)
         {
