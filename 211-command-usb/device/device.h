@@ -17,8 +17,8 @@
 struct info_t
 {
     uint32_t version;
-    char     name[13];
     uint8_t  revision;
+    char     name[13];
 };
 
 // ─── extern: определение будет в device.c, здесь только объявление ─
