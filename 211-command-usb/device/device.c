@@ -8,9 +8,9 @@
 
 // ─── определение переменной (память отводится здесь) ──────
 struct info_t device_card = {
-    .revision = 2,
     .version  = 0x00010000,
     .name     = "es-cmd-usb",
+    .revision = 2,
 };
 
 
