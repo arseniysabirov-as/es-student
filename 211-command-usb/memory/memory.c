@@ -3,9 +3,16 @@
 #include <stdlib.h>
 #include "hardware/regs/addressmap.h"
 #include "pico/stdlib.h"
-#include "../command.h"     // commands[], command_count
+#include "led.h"
+#include "command.h"     // commands[], command_count
 #include "device.h"      // DEVICE_NAME, FIRMWARE_VERSION, ...
+#include "memory.h"
 
+// Адрес таблицы векторов: сразу за 256-байтовым загрузчиком второй стадии
+#define VECTOR_TABLE 0x10000100
+
+// Адрес регистра GPIO_IN в блоке SIO
+#define SIO_GPIO_IN 0xd0000004u
 
 int main(void);
 // Символы, которые расставляет компоновщик.
@@ -160,4 +167,46 @@ void fw_info(void)
 
     // Взяли у кучи — верните
     free(heap_variable);
+}
+
+
+void boot_info(void)
+{
+    // ─── таблица векторов ──────────────────────────────────
+    const uint32_t *vectors = (const uint32_t *)VECTOR_TABLE;
+
+    uint32_t stack_top     = vectors[0];   // начальное значение SP
+    uint32_t reset_handler = vectors[1];   // точка входа прошивки
+
+    // ─── регистр GPIO_IN ───────────────────────────────────
+    volatile uint32_t *gpio_in = (volatile uint32_t *)SIO_GPIO_IN;
+    uint pin = led_pin();
+
+    // Сдвигаем нужный разряд к младшему и отрезаем маску
+    uint32_t level = (*gpio_in >> pin) & 1u;
+
+    // То же самое, но через SDK
+    bool level_sdk = gpio_get(pin);
+
+    // ─── шапка ─────────────────────────────────────────────
+    printf("%-16s %-11s %s\n", "object", "address", "value");
+    printf("--------------------------------------------------\n");
+
+    // ─── vector table ─────────────────────────────────────
+    printf("%-16s 0x%08x\n",
+           "vector table", (unsigned)VECTOR_TABLE);
+    printf("  %-14s             0x%08x\n",
+           "stack top", (unsigned)stack_top);
+    printf("  %-14s             0x%08x\n",
+           "reset", (unsigned)reset_handler);
+    printf("  %-14s             0x%08x\n",
+           "reset (even)", (unsigned)(reset_handler & ~1u));
+
+    // ─── GPIO_IN ──────────────────────────────────────────
+    printf("%-16s 0x%08x\n",
+           "gpio in", (unsigned)SIO_GPIO_IN);
+    printf("  %-14s             0x%08x\n",
+           "led bit", (unsigned)level);
+    printf("  %-14s             0x%08x\n",
+           "gpio_get", (unsigned)level_sdk);
 }
