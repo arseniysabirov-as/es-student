@@ -15,6 +15,8 @@ char line[LINE_SIZE];
 uint line_length = 0;
 
 const uint BLINK_HALF_PERIOD_MS = 500;
+/ прикидка: за член ряда 4 операции с double, 175 + 110 + 190 + 110 = 585 тактов;
+// 1 000 000 членов по 585 тактов при 125 МГц — около 4,7 с
 const uint CALC_PI_TERMS = 1000000;
 
 uint64_t last_toggle_us = 0;
