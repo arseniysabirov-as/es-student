@@ -3,34 +3,34 @@
 устройство: 2e8a:000a
 серийный номер: 5054316520DB8A1C
 порт: COM7
-начало: 2026-10-05T15:24:54
+начало: 2026-10-05T15:30:23
    0.000 --> main_time_reset
    0.001 <-- main_time_reset
-   0.002 <-- dbg read_line:158 got main_time_reset
-   0.003 <-- err handle_command:139 unknown command: main_time_reset
-   2.058 --> main_time_exec
-   2.058 <-- main_time_exec
-   2.059 <-- dbg read_line:158 got main_time_exec
-   2.060 <-- err handle_command:139 unknown command: main_time_exec
-   3.073 --> calc_pi
-   3.073 <-- calc_pi
-   3.074 <-- dbg read_line:158 got calc_pi
-   7.757 <-- pi: 3.14159165
-   7.758 <-- time: 4682 ms
-   9.188 --> main_time_exec
-   9.188 <-- main_time_exec
-   9.189 <-- dbg read_line:158 got main_time_exec
-   9.189 <-- err handle_command:139 unknown command: main_time_exec
-  14.299 --> main_time_exec
-  14.299 <-- main_time_exec
-  14.300 <-- dbg read_line:158 got main_time_exec
-  14.301 <-- err handle_command:139 unknown command: main_time_exec
-  15.333 --> main_time_reset
-  15.334 <-- main_time_reset
-  15.335 <-- dbg read_line:158 got main_time_reset
-  15.336 <-- err handle_command:139 unknown command: main_time_reset
-  16.355 --> main_time_exec
-  16.355 <-- main_time_exec
-  16.356 <-- dbg read_line:158 got main_time_exec
-  16.357 <-- err handle_command:139 unknown command: main_time_exec
+   0.002 <-- dbg read_line:174 got main_time_reset
+   0.003 <-- inf cmd_main_time_reset:121 max reset
+   2.055 --> main_time_exec
+   2.056 <-- main_time_exec
+   2.056 <-- dbg read_line:174 got main_time_exec
+   2.057 <-- iteration avg 2.50 us, max 690 us
+   3.093 --> calc_pi
+   3.093 <-- calc_pi
+   3.094 <-- dbg read_line:174 got calc_pi
+   7.777 <-- pi: 3.14159165
+   7.777 <-- time: 4682 ms
+   9.241 --> main_time_exec
+   9.242 <-- main_time_exec
+   9.242 <-- dbg read_line:174 got main_time_exec
+   9.243 <-- iteration avg 5.57 us, max 4683175 us
+  14.337 --> main_time_exec
+  14.338 <-- main_time_exec
+  14.338 <-- dbg read_line:174 got main_time_exec
+  14.339 <-- iteration avg 2.64 us, max 4683175 us
+  15.356 --> main_time_reset
+  15.357 <-- main_time_reset
+  15.358 <-- dbg read_line:174 got main_time_reset
+  15.358 <-- inf cmd_main_time_reset:121 max reset
+  16.383 --> main_time_exec
+  16.384 <-- main_time_exec
+  16.384 <-- dbg read_line:174 got main_time_exec
+  16.385 <-- iteration avg 2.59 us, max 378 us
 итог: отправлено команд 7, принято строк 22
