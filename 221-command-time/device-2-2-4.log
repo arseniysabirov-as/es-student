@@ -1,0 +1,36 @@
+задание: 2.2.4
+проект: 221-command-time
+устройство: 2e8a:000a
+серийный номер: 5054316520DB8A1C
+порт: COM7
+начало: 2026-10-05T15:24:54
+   0.000 --> main_time_reset
+   0.001 <-- main_time_reset
+   0.002 <-- dbg read_line:158 got main_time_reset
+   0.003 <-- err handle_command:139 unknown command: main_time_reset
+   2.058 --> main_time_exec
+   2.058 <-- main_time_exec
+   2.059 <-- dbg read_line:158 got main_time_exec
+   2.060 <-- err handle_command:139 unknown command: main_time_exec
+   3.073 --> calc_pi
+   3.073 <-- calc_pi
+   3.074 <-- dbg read_line:158 got calc_pi
+   7.757 <-- pi: 3.14159165
+   7.758 <-- time: 4682 ms
+   9.188 --> main_time_exec
+   9.188 <-- main_time_exec
+   9.189 <-- dbg read_line:158 got main_time_exec
+   9.189 <-- err handle_command:139 unknown command: main_time_exec
+  14.299 --> main_time_exec
+  14.299 <-- main_time_exec
+  14.300 <-- dbg read_line:158 got main_time_exec
+  14.301 <-- err handle_command:139 unknown command: main_time_exec
+  15.333 --> main_time_reset
+  15.334 <-- main_time_reset
+  15.335 <-- dbg read_line:158 got main_time_reset
+  15.336 <-- err handle_command:139 unknown command: main_time_reset
+  16.355 --> main_time_exec
+  16.355 <-- main_time_exec
+  16.356 <-- dbg read_line:158 got main_time_exec
+  16.357 <-- err handle_command:139 unknown command: main_time_exec
+итог: отправлено команд 7, принято строк 22

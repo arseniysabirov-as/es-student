@@ -9,6 +9,9 @@
 #include "memory.h"
 #include "command.h" 
 #include "clock.h"
+#include "profiling.h"
+
+
 #define LINE_SIZE 32
 
 char line[LINE_SIZE];
@@ -107,6 +110,17 @@ void cmd_calc_pi(void)
     printf("time: %llu ms\n", spent_us / 1000);
 }
 
+void cmd_main_time_exec(void)
+{
+    printf("iteration avg %.2f us, max %u us\n", profiling_avg_us(), (unsigned)profiling_max_us());
+}
+
+void cmd_main_time_reset(void)
+{
+    profiling_reset_max();
+    LOG_INF("max reset\n");
+}
+
 
 const struct command_t commands[] = {
     { "info", cmd_info },
@@ -119,6 +133,8 @@ const struct command_t commands[] = {
     { "clk_info", cmd_clk_info },
     { "uptime", cmd_uptime },
     { "calc_pi", cmd_calc_pi },
+    { "main_time_exec",  cmd_main_time_exec  },
+    { "main_time_reset", cmd_main_time_reset },
 };
 
 const uint command_count = sizeof(commands) / sizeof(commands[0]);
@@ -174,17 +190,15 @@ void read_line(void)
 int main()
 {
     stdio_init_all();
-
     led_init();
-
+    profiling_init();
     
     bool previous = false;
 
    while (1)
     {
-
+        profiling_iteration();
         blink();
-
         read_line();
     }
 }
