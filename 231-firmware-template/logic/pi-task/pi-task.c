@@ -1,6 +1,6 @@
-#include "pi-task.h"
-#include "pico/stdlib.h"
+#include "pi-task/pi-task.h"
 #include "systime/systime.h"
+#include "pico/stdlib.h"
 
 // член ряда стоит около 585 тактов, при 125 МГц это 4,7 мкс;
 // обработчик должен уложиться в 0,5 мс — это около 100 членов

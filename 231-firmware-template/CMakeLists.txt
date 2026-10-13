@@ -14,32 +14,57 @@ add_compile_options(-Wall)
 # libs лежит вне папки проекта: второй аргумент задаёт каталог сборки
 add_subdirectory(../libs ${CMAKE_BINARY_DIR}/libs)
 
+# железо прибора: единственное место проекта с SDK
+add_library(platform STATIC
+    platform/platform.c
+)
+target_include_directories(platform PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(platform PRIVATE
+    pico_stdlib
+)
+
+# логика прибора: задачи и команды, без SDK
+add_library(logic STATIC
+    logic/api/api.c
+    logic/api/api-callbacks.c
+    logic/led-task/led-task.c
+    logic/button-task/button-task.c
+    logic/pi-task/pi-task.c
+)
+target_include_directories(logic PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/logic
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(logic
+    PUBLIC
+        stdio_text_protocol
+    PRIVATE
+        platform
+        systime
+        profiling
+        device
+        logging
+)
+
 add_executable(${PROJECT_NAME}
     main.c
-    api/api.c
-    led-task/led-task.c
-    button-task/button-task.c
-    pi-task/pi-task.c
 )
-
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/api
-    ${CMAKE_CURRENT_SOURCE_DIR}/led-task
-    ${CMAKE_CURRENT_SOURCE_DIR}/button-task
-    ${CMAKE_CURRENT_SOURCE_DIR}/pi-task
 )
-
 target_link_libraries(${PROJECT_NAME}
-    pico_stdlib
+    platform
+    logic
     stdio_text_protocol
     systime
     profiling
     device
     logging
+    pico_stdlib
 )
 
-# выключатель профилирования: 0 — вызовов секундомеров в образе нет
 target_compile_definitions(profiling PUBLIC
     PROFILING_ENABLED=1
 )
