@@ -9,7 +9,9 @@ static void row(const char *name, uint32_t set_khz, uint32_t measured_khz)
 {
     printf("%-8s %9u %12u\n", name, (unsigned)set_khz, (unsigned)measured_khz);
 }
-
+// set_sys_clock_khz() вызывает set_sys_clock_pll(), а та переводит clk_peri
+// на PLL для USB, 48 МГц. Так настроено по умолчанию:
+// PICO_CLOCK_ADJUST_PERI_CLOCK_WITH_SYS_CLOCK равен 0.
 static void clk_sys_set(uint32_t khz)
 {
     if (set_sys_clock_khz(khz, false))

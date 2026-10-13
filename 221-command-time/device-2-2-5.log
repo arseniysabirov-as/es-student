@@ -3,7 +3,7 @@
 устройство: 2e8a:000a
 серийный номер: 5054316520DB8A1C
 порт: COM7
-начало: 2026-10-05T15:35:31
+начало: 2026-10-06T08:10:14
    0.000 --> clk_info
    0.001 <-- clk_info
    0.001 <-- dbg read_line:186 got clk_info
@@ -11,77 +11,77 @@
    0.003 <-- ----------------------------------
    0.003 <-- clk_ref      12000        12001
    0.004 <-- clk_sys     125000       125000
-   0.005 <-- clk_peri    125000       125000
-   0.007 <-- clk_usb      48000        48000
-   0.008 <-- clk_adc      48000        48000
-   0.008 <-- rosc             -         5581
-   1.026 --> main_time_reset
-   1.027 <-- main_time_reset
-   1.028 <-- dbg read_line:186 got main_time_reset
-   1.028 <-- inf cmd_main_time_reset:130 max reset
-   3.054 --> main_time_exec
-   3.054 <-- main_time_exec
-   3.055 <-- dbg read_line:186 got main_time_exec
-   3.056 <-- iteration avg 2.54 us, max 397 us
-   4.094 --> calc_pi
-   4.095 <-- calc_pi
-   4.096 <-- dbg read_line:186 got calc_pi
-   8.778 <-- pi: 3.14159165
-   8.779 <-- time: 4682 ms
-  10.234 --> clk_sys_low
-  10.234 <-- clk_sys_low
-  10.235 <-- dbg read_line:186 got clk_sys_low
-  10.236 <-- inf clk_sys_set:17 clk_sys 62500 kHz
-  11.271 --> clk_info
-  11.272 <-- clk_info
-  11.273 <-- dbg read_line:186 got clk_info
-  11.273 <-- clock     set, kHz measured, kHz
-  11.274 <-- ----------------------------------
-  11.274 <-- clk_ref      12000        12001
-  11.276 <-- clk_sys      62500        62500
-  11.277 <-- clk_peri     48000        48000
-  11.278 <-- clk_usb      48000        48000
-  11.279 <-- clk_adc      48000        48000
-  11.280 <-- rosc             -         5587
-  12.307 --> uptime
-  12.308 <-- uptime
-  12.309 <-- dbg read_line:186 got uptime
-  12.309 <-- uptime: 21315 ms
-  14.350 --> uptime
-  14.351 <-- uptime
-  14.352 <-- dbg read_line:186 got uptime
-  14.352 <-- uptime: 23358 ms
-  15.377 --> main_time_reset
-  15.379 <-- main_time_reset
-  15.380 <-- dbg read_line:186 got main_time_reset
-  15.381 <-- inf cmd_main_time_reset:130 max reset
-  17.457 --> main_time_exec
-  17.458 <-- main_time_exec
-  17.459 <-- dbg read_line:186 got main_time_exec
-  17.459 <-- iteration avg 5.18 us, max 751 us
-  18.477 --> calc_pi
-  18.477 <-- calc_pi
-  18.478 <-- dbg read_line:186 got calc_pi
-  27.844 <-- pi: 3.14159165
-  27.845 <-- time: 9365 ms
-  29.493 --> clk_sys_default
-  29.494 <-- clk_sys_default
-  29.495 <-- dbg read_line:186 got clk_sys_default
-  29.496 <-- inf clk_sys_set:17 clk_sys 125000 kHz
-  30.551 --> clk_info
-  30.551 <-- clk_info
-  30.552 <-- dbg read_line:186 got clk_info
-  30.553 <-- clock     set, kHz measured, kHz
-  30.553 <-- ----------------------------------
-  30.554 <-- clk_ref      12000        12001
-  30.555 <-- clk_sys     125000       125000
-  30.555 <-- clk_peri     48000        48000
-  30.556 <-- clk_usb      48000        48000
-  30.558 <-- clk_adc      48000        48000
-  30.559 <-- rosc             -         5583
-  31.593 --> calc_pi
-  31.593 <-- calc_pi
-  31.594 <-- dbg read_line:186 got calc_pi
-  36.277 <-- pi: 3.14159165
-  36.277 <-- time: 4682 ms
+   0.005 <-- clk_peri     48000        48000
+   0.006 <-- clk_usb      48000        48000
+   0.007 <-- clk_adc      48000        48000
+   0.008 <-- rosc             -         5588
+   1.041 --> main_time_reset
+   1.042 <-- main_time_reset
+   1.043 <-- dbg read_line:186 got main_time_reset
+   1.043 <-- inf cmd_main_time_reset:130 max reset
+   3.073 --> main_time_exec
+   3.074 <-- main_time_exec
+   3.075 <-- dbg read_line:186 got main_time_exec
+   3.075 <-- iteration avg 2.54 us, max 391 us
+   4.096 --> calc_pi
+   4.097 <-- calc_pi
+   4.098 <-- dbg read_line:186 got calc_pi
+   8.780 <-- pi: 3.14159165
+   8.781 <-- time: 4682 ms
+  10.203 --> clk_sys_low
+  10.204 <-- clk_sys_low
+  10.204 <-- dbg read_line:186 got clk_sys_low
+  10.205 <-- inf clk_sys_set:17 clk_sys 62500 kHz
+  11.216 --> clk_info
+  11.217 <-- clk_info
+  11.218 <-- dbg read_line:186 got clk_info
+  11.219 <-- clock     set, kHz measured, kHz
+  11.219 <-- ----------------------------------
+  11.220 <-- clk_ref      12000        12001
+  11.221 <-- clk_sys      62500        62500
+  11.222 <-- clk_peri     48000        48000
+  11.224 <-- clk_usb      48000        48000
+  11.225 <-- clk_adc      48000        48000
+  11.226 <-- rosc             -         5589
+  12.250 --> uptime
+  12.250 <-- uptime
+  12.251 <-- dbg read_line:186 got uptime
+  12.251 <-- uptime: 874473 ms
+  14.276 --> uptime
+  14.277 <-- uptime
+  14.278 <-- dbg read_line:186 got uptime
+  14.278 <-- uptime: 876500 ms
+  15.295 --> main_time_reset
+  15.296 <-- main_time_reset
+  15.297 <-- dbg read_line:186 got main_time_reset
+  15.298 <-- inf cmd_main_time_reset:130 max reset
+  17.333 --> main_time_exec
+  17.335 <-- main_time_exec
+  17.335 <-- dbg read_line:186 got main_time_exec
+  17.336 <-- iteration avg 5.18 us, max 725 us
+  18.365 --> calc_pi
+  18.366 <-- calc_pi
+  18.367 <-- dbg read_line:186 got calc_pi
+  27.732 <-- pi: 3.14159165
+  27.733 <-- time: 9365 ms
+  29.562 --> clk_sys_default
+  29.564 <-- clk_sys_default
+  29.564 <-- dbg read_line:186 got clk_sys_default
+  29.565 <-- inf clk_sys_set:17 clk_sys 125000 kHz
+  30.590 --> clk_info
+  30.590 <-- clk_info
+  30.591 <-- dbg read_line:186 got clk_info
+  30.591 <-- clock     set, kHz measured, kHz
+  30.592 <-- ----------------------------------
+  30.592 <-- clk_ref      12000        12001
+  30.593 <-- clk_sys     125000       125000
+  30.594 <-- clk_peri     48000        48000
+  30.595 <-- clk_usb      48000        48000
+  30.596 <-- clk_adc      48000        48000
+  30.598 <-- rosc             -         5582
+  31.612 --> calc_pi
+  31.612 <-- calc_pi
+  31.613 <-- dbg read_line:186 got calc_pi
+  36.295 <-- pi: 3.14159165
+  36.296 <-- time: 4682 ms
 итог: отправлено команд 14, принято строк 66
