@@ -9,6 +9,7 @@
 #include "device/device.h"
 #include "profiling/profiling.h"
 #include "button-task/button-task.h"
+#include "pi-task/pi-task.h"
 
 typedef void (*api_callback_t)(const command_t *command);
 
@@ -164,6 +165,66 @@ static void cmd_calc_pi(const command_t *command)
     printf("time: %llu ms\n", (unsigned long long)elapsed_ms);
 }
 
+static void cmd_pi_start(const command_t *command)
+{
+    uint32_t terms = 1000000;   // по умолчанию
+
+    if (command->argc > 1)
+    {
+        printf("error: usage pi_start [<terms>]\n");
+        return;
+    }
+
+    if (command->argc == 1)
+    {
+        if (!parse_u32(command->argv[0], &terms))
+        {
+            printf("error: usage pi_start [<terms>]\n");
+            return;
+        }
+    }
+
+    if (terms == 0)
+    {
+        printf("error: terms must be greater than 0\n");
+        return;
+    }
+
+    if (!pi_task_start(terms))
+    {
+        printf("error: pi is busy\n");
+        return;
+    }
+
+    printf("pi: started, %u terms\n", (unsigned)terms);
+}
+
+static void cmd_pi(const command_t *command)
+{
+    (void)command;
+
+    switch (pi_task_get_state())
+    {
+    case PI_STATE_IDLE:
+        printf("pi: not started\n");
+        break;
+
+    case PI_STATE_RUNNING:
+        printf("pi: running\n");
+        break;
+
+    case PI_STATE_DONE:
+    {
+        double   value;
+        uint32_t elapsed_ms;
+        uint32_t terms;
+        pi_task_get_result(&value, &elapsed_ms, &terms);
+        printf("pi: %.9f in %u ms\n", value, (unsigned)elapsed_ms);
+        break;
+    }
+    }
+}
+
 static void cmd_main_time_exec(const command_t *command)
 {
     (void)command;
@@ -181,16 +242,18 @@ static void cmd_main_time_reset(const command_t *command)
 
 // ─── таблица команд ────────────────────────────────────────
 static const api_command_t commands[] = {
-    { "info",            "device passport",                          cmd_info            },
-    { "uptime",          "time since reset",                         cmd_uptime          },
-    { "calc_pi",         "calculate pi: calc_pi [terms]",            cmd_calc_pi         },
-    { "main_time_exec",  "superloop iteration: average and maximum", cmd_main_time_exec  },
-    { "main_time_reset", "reset maximum iteration",                  cmd_main_time_reset },
-    { "led_enable",  "turn led on",                      cmd_led_enable  },
-    { "led_disable", "turn led off",                     cmd_led_disable },
-    { "led_blink",   "make led blink",                   cmd_led_blink   },
-    { "led_period",  "set blink period: led_period <ms>", cmd_led_period },
-    { "button", "button state and press count", cmd_button },
+    { "info",            "device passport",                             cmd_info            },
+    { "uptime",          "time since reset",                            cmd_uptime          },
+    { "calc_pi",         "calculate pi: calc_pi [terms]",               cmd_calc_pi         },
+    { "main_time_exec",  "superloop iteration: average and maximum",    cmd_main_time_exec  },
+    { "main_time_reset", "reset maximum iteration",                     cmd_main_time_reset },
+    { "led_enable",  "turn led on",                                     cmd_led_enable  },
+    { "led_disable", "turn led off",                                    cmd_led_disable },
+    { "led_blink",   "make led blink",                                  cmd_led_blink   },
+    { "led_period",  "set blink period: led_period <ms>",               cmd_led_period },
+    { "button", "button state and press count",                         cmd_button },
+    { "pi_start", "start pi calculation: pi_start [terms]",             cmd_pi_start },
+    { "pi",       "pi result or state",                                 cmd_pi       },
 };
 
 #define COMMANDS_COUNT (sizeof(commands) / sizeof(commands[0]))

@@ -6,6 +6,7 @@
 #include "api/api.h"
 #include "led-task/led-task.h"
 #include "button-task/button-task.h"
+#include "pi-task/pi-task.h"
 
 int main(void)
 {
@@ -21,6 +22,7 @@ int main(void)
         profiling_iteration();
         led_task_handle();
         button_task_handle();
+        pi_task_handle();       // <-- НОВОЕ
 
         const command_t *command = stdio_text_protocol_handle();
         if (command != NULL)
