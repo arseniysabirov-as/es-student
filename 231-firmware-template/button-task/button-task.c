@@ -2,8 +2,8 @@
 #include "pico/stdlib.h"
 #include "led-task/led-task.h"
 
-#define BUTTON_PIN        15u
-#define BUTTON_DEBOUNCE_US (20u * 1000u)
+#define BUTTON_PIN        15
+#define BUTTON_DEBOUNCE_US (20 * 1000)
 
 typedef enum {
     BUTTON_STATE_RELEASED,     // отпущена
