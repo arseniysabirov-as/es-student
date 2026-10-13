@@ -1,5 +1,6 @@
 #include "pi-task.h"
 #include "pico/stdlib.h"
+#include "systime/systime.h"
 
 // член ряда стоит около 585 тактов, при 125 МГц это 4,7 мкс;
 // обработчик должен уложиться в 0,5 мс — это около 100 членов
@@ -29,7 +30,7 @@ bool pi_task_start(uint32_t terms)
     pi_k          = 0;
     pi_sum        = 0.0;
     pi_sign       = 1.0;
-    pi_start_us   = time_us_64();
+    pi_start_us   = systime_us();
     pi_elapsed_ms = 0;
     pi_state      = PI_STATE_RUNNING;
 
@@ -64,7 +65,7 @@ void pi_task_handle(void)
     if (pi_k >= pi_terms)
     {
         pi_sum *= 4.0;
-        pi_elapsed_ms = (uint32_t)((time_us_64() - pi_start_us) / 1000);
+        pi_elapsed_ms = (uint32_t)((systime_us() - pi_start_us) / 1000);
         pi_state = PI_STATE_DONE;
     }
 }

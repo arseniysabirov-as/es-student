@@ -8,6 +8,7 @@
 #include "led-task/led-task.h"
 #include "button-task/button-task.h"
 #include "pi-task/pi-task.h"
+#include "firmware.h"
 
 // номера секундомеров
 typedef enum {
@@ -32,7 +33,7 @@ int main(void)
     button_task_init();
     stdio_text_protocol_init();
 
-    LOG_INF("%s %s\n", DEVICE_NAME, FIRMWARE_VERSION);
+    LOG_INF("%s %s\n", FIRMWARE_NAME, FIRMWARE_VERSION);
 
     while (1)
     {

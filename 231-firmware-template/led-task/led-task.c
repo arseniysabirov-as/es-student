@@ -1,5 +1,6 @@
 #include "led-task.h"
 #include "pico/stdlib.h"
+#include "systime/systime.h"
 
 #define LED_PIN            25u
 #define INITIAL_PERIOD_MS  1000u
@@ -18,24 +19,6 @@ static void led_apply(bool on)
 
 // проверка периода: следующее срабатывание отсчитывается от прошлого,
 // при большом отставании метка перескакивает в now
-static bool period_elapsed(uint64_t *last_us, uint64_t period_us)
-{
-    uint64_t now = time_us_64();
-
-    if (now - *last_us < period_us)
-    {
-        return false;
-    }
-
-    *last_us += period_us;
-
-    if (now - *last_us >= period_us)
-    {
-        *last_us = now;
-    }
-
-    return true;
-}
 
 void led_task_next_state(void)
 {
@@ -79,7 +62,7 @@ void led_task_set_state(led_state_t state)
 
     case LED_STATE_BLINK:
         // метка в прошлом на полпериода — первое переключение сразу
-        last_toggle_us = time_us_64() - (uint64_t)led_period_ms * 500u;
+        last_toggle_us = systime_us() - (uint64_t)led_period_ms * 500u;
         break;
     }
 }
@@ -94,7 +77,7 @@ void led_task_handle(void)
         break;
 
     case LED_STATE_BLINK:
-        if (period_elapsed(&last_toggle_us, (uint64_t)led_period_ms * 500u))
+        if (systime_period_elapsed(&last_toggle_us, (uint64_t)led_period_ms * 500u))
         {
             led_apply(!led_on);
         }
