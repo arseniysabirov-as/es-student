@@ -37,6 +37,22 @@ static bool period_elapsed(uint64_t *last_us, uint64_t period_us)
     return true;
 }
 
+void led_task_next_state(void)
+{
+    switch (led_state)
+    {
+    case LED_STATE_OFF:
+        led_task_set_state(LED_STATE_ON);
+        break;
+    case LED_STATE_ON:
+        led_task_set_state(LED_STATE_BLINK);
+        break;
+    case LED_STATE_BLINK:
+        led_task_set_state(LED_STATE_OFF);
+        break;
+    }
+}
+
 void led_task_init(void)
 {
     gpio_init(LED_PIN);
