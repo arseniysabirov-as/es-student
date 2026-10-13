@@ -3,7 +3,7 @@
 #include "led-task/led-task.h"
 
 #define BUTTON_PIN        15u
-#define DEBOUNCE_US       20000u   // 20 мс в микросекундах
+#define BUTTON_DEBOUNCE_US (20u * 1000u)
 
 typedef enum {
     BUTTON_STATE_RELEASED,     // отпущена
@@ -54,7 +54,7 @@ void button_task_handle(void)
             // дребезг или помеха — вернулись
             button_state = BUTTON_STATE_RELEASED;
         }
-        else if (now - button_changed_us >= DEBOUNCE_US)
+        else if (now - button_changed_us >= BUTTON_DEBOUNCE_US)
         {
             // нажатие подтверждено
             button_state = BUTTON_STATE_PRESSED;
@@ -76,7 +76,7 @@ void button_task_handle(void)
         {
             button_state = BUTTON_STATE_PRESSED;
         }
-        else if (now - button_changed_us >= DEBOUNCE_US)
+        else if (now - button_changed_us >= BUTTON_DEBOUNCE_US)
         {
             button_state = BUTTON_STATE_RELEASED;
         }
