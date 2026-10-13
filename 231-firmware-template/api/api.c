@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
+#include "led-task/led-task.h"
 #include "pico/stdlib.h"
 #include "device/device.h"
 #include "profiling/profiling.h"
@@ -45,6 +45,61 @@ static bool parse_u32(const char *text, uint32_t *value)
 
 // ─── обработчики команд ────────────────────────────────────
 
+static void print_led_state(void)
+{
+    const char *name;
+    switch (led_task_get_state())
+    {
+    case LED_STATE_OFF:   name = "off";   break;
+    case LED_STATE_ON:    name = "on";    break;
+    case LED_STATE_BLINK: name = "blink"; break;
+    default:              name = "?";     break;
+    }
+
+    printf("led: %s, period %u ms\n",
+           name, (unsigned)led_task_get_period_ms());
+}
+
+static void cmd_led_enable(const command_t *command)
+{
+    (void)command;
+    led_task_set_state(LED_STATE_ON);
+    print_led_state();
+}
+
+static void cmd_led_disable(const command_t *command)
+{
+    (void)command;
+    led_task_set_state(LED_STATE_OFF);
+    print_led_state();
+}
+
+static void cmd_led_blink(const command_t *command)
+{
+    (void)command;
+    led_task_set_state(LED_STATE_BLINK);
+    print_led_state();
+}
+
+static void cmd_led_period(const command_t *command)
+{
+    uint32_t period_ms;
+
+    if (command->argc != 1 || !parse_u32(command->argv[0], &period_ms))
+    {
+        printf("error: usage led_period <period_ms>\n");
+        return;
+    }
+
+    if (!led_task_set_period_ms(period_ms))
+    {
+        printf("error: period_ms must be greater than 0\n");
+        return;
+    }
+
+    print_led_state();
+}
+
 static void cmd_info(const command_t *command)
 {
     (void)command;
@@ -54,8 +109,7 @@ static void cmd_info(const command_t *command)
 static void cmd_uptime(const command_t *command)
 {
     (void)command;
-    printf("uptime: %llu ms\n",
-           (unsigned long long)(time_us_64() / 1000));
+    printf("uptime: %llu ms\n", (unsigned long long)(time_us_64() / 1000));
 }
 
 static void cmd_calc_pi(const command_t *command)
@@ -122,6 +176,10 @@ static const api_command_t commands[] = {
     { "calc_pi",         "calculate pi: calc_pi [terms]",            cmd_calc_pi         },
     { "main_time_exec",  "superloop iteration: average and maximum", cmd_main_time_exec  },
     { "main_time_reset", "reset maximum iteration",                  cmd_main_time_reset },
+    { "led_enable",  "turn led on",                      cmd_led_enable  },
+    { "led_disable", "turn led off",                     cmd_led_disable },
+    { "led_blink",   "make led blink",                   cmd_led_blink   },
+    { "led_period",  "set blink period: led_period <ms>", cmd_led_period },
 };
 
 #define COMMANDS_COUNT (sizeof(commands) / sizeof(commands[0]))
@@ -163,3 +221,4 @@ void api_handle(const command_t *command)
 
     printf("error: unknown command '%s', try help\n", command->name);
 }
+
