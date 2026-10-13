@@ -10,6 +10,8 @@
 #include "profiling/profiling.h"
 #include "button-task/button-task.h"
 #include "pi-task/pi-task.h"
+#include "device/device.h"
+#include "profiling/profiling.h"
 
 typedef void (*api_callback_t)(const command_t *command);
 
@@ -109,12 +111,6 @@ static void cmd_led_period(const command_t *command)
     }
 
     print_led_state();
-}
-
-static void cmd_info(const command_t *command)
-{
-    (void)command;
-    device_info();
 }
 
 static void cmd_uptime(const command_t *command)
@@ -225,35 +221,67 @@ static void cmd_pi(const command_t *command)
     }
 }
 
-static void cmd_main_time_exec(const command_t *command)
+static void cmd_info(const command_t *command)
 {
     (void)command;
-    printf("iteration avg %.2f us, max %u us\n",
-           profiling_avg_us(),
-           (unsigned)profiling_max_us());
+
+    device_info_t info;
+    device_get_info(&info);
+
+    printf("name: %s\n",     DEVICE_NAME);
+    printf("version: %s\n",  FIRMWARE_VERSION);
+    printf("project: %s\n",  DEVICE_PROJECT);
+    printf("repo: %s\n",     DEVICE_REPO);
+    printf("board: %s\n",    info.board);
+    printf("serial: %s\n",   info.serial);
+    printf("chip: manufacturer 0x%03x, part 0x%04x, revision %u\n",
+           (unsigned)info.manufacturer,
+           (unsigned)info.part,
+           (unsigned)info.revision);
+    printf("pico-sdk: %s\n", info.sdk_version);
 }
 
-static void cmd_main_time_reset(const command_t *command)
+static void cmd_profiling(const command_t *command)
 {
     (void)command;
-    profiling_reset_max();
-    printf("max reset\n");
+
+    for (uint32_t i = 0; i < PROFILING_STOPWATCH_COUNT; i++)
+    {
+        profiling_result_t r;
+        if (!profiling_get(i, &r))
+        {
+            continue;
+        }
+
+        printf("%-10s count %-10u mean %.2f us  max %u us\n",
+               r.name,
+               (unsigned)r.count,
+               (double)r.mean_us,
+               (unsigned)r.max_us);
+    }
+}
+
+static void cmd_profiling_reset(const command_t *command)
+{
+    (void)command;
+    profiling_reset();
+    printf("profiling reset\n");
 }
 
 // ─── таблица команд ────────────────────────────────────────
 static const api_command_t commands[] = {
-    { "info",            "device passport",                             cmd_info            },
-    { "uptime",          "time since reset",                            cmd_uptime          },
-    { "calc_pi",         "calculate pi: calc_pi [terms]",               cmd_calc_pi         },
-    { "main_time_exec",  "superloop iteration: average and maximum",    cmd_main_time_exec  },
-    { "main_time_reset", "reset maximum iteration",                     cmd_main_time_reset },
-    { "led_enable",  "turn led on",                                     cmd_led_enable  },
-    { "led_disable", "turn led off",                                    cmd_led_disable },
-    { "led_blink",   "make led blink",                                  cmd_led_blink   },
-    { "led_period",  "set blink period: led_period <ms>",               cmd_led_period },
-    { "button", "button state and press count",                         cmd_button },
-    { "pi_start", "start pi calculation: pi_start [terms]",             cmd_pi_start },
-    { "pi",       "pi result or state",                                 cmd_pi       },
+    { "info",           "device passport",                             cmd_info        },
+    { "uptime",         "time since reset",                            cmd_uptime      },
+    { "calc_pi",        "calculate pi: calc_pi [terms]",               cmd_calc_pi     },
+    { "led_enable",     "turn led on",                                 cmd_led_enable  },
+    { "led_disable",    "turn led off",                                cmd_led_disable },
+    { "led_blink",      "make led blink",                              cmd_led_blink   },
+    { "led_period",     "set blink period: led_period <ms>",           cmd_led_period  },
+    { "button",         "button state and press count",                cmd_button      },
+    { "pi_start",       "start pi calculation: pi_start [terms]",      cmd_pi_start    },
+    { "pi",             "pi result or state",                          cmd_pi          },
+    { "profiling",      "stopwatch results",                           cmd_profiling       },
+    { "profiling_reset","reset stopwatches",                           cmd_profiling_reset },
 };
 
 #define COMMANDS_COUNT (sizeof(commands) / sizeof(commands[0]))
