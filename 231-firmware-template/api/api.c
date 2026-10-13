@@ -119,48 +119,6 @@ static void cmd_uptime(const command_t *command)
     printf("uptime: %llu ms\n", (unsigned long long)(time_us_64() / 1000));
 }
 
-static void cmd_calc_pi(const command_t *command)
-{
-    uint32_t terms = 1000000;
-
-    if (command->argc > 1)
-    {
-        printf("error: usage calc_pi [terms]\n");
-        return;
-    }
-
-    if (command->argc == 1)
-    {
-        if (!parse_u32(command->argv[0], &terms))
-        {
-            printf("error: usage calc_pi [terms]\n");
-            return;
-        }
-    }
-
-    if (terms == 0)
-    {
-        printf("error: terms must be greater than 0\n");
-        return;
-    }
-
-    uint64_t start = time_us_64();
-
-    double pi = 0.0;
-    double sign = 1.0;
-    for (uint32_t i = 0; i < terms; i++)
-    {
-        pi += sign / (2.0 * i + 1.0);
-        sign = -sign;
-    }
-    pi *= 4.0;
-
-    uint64_t elapsed_ms = (time_us_64() - start) / 1000;
-
-    printf("pi: %.9f\n", pi);
-    printf("time: %llu ms\n", (unsigned long long)elapsed_ms);
-}
-
 static void cmd_pi_start(const command_t *command)
 {
     uint32_t terms = 1000000;   // по умолчанию
@@ -272,7 +230,6 @@ static void cmd_profiling_reset(const command_t *command)
 static const api_command_t commands[] = {
     { "info",           "device passport",                             cmd_info        },
     { "uptime",         "time since reset",                            cmd_uptime      },
-    { "calc_pi",        "calculate pi: calc_pi [terms]",               cmd_calc_pi     },
     { "led_enable",     "turn led on",                                 cmd_led_enable  },
     { "led_disable",    "turn led off",                                cmd_led_disable },
     { "led_blink",      "make led blink",                              cmd_led_blink   },
