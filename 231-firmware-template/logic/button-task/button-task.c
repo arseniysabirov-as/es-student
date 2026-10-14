@@ -4,7 +4,7 @@
 
 // время дребезга: 20 мс, выражено в микросекундах
 #define DEBOUNCE_US (20 * 1000)
-
+int unused_variable;
 typedef enum {
     BUTTON_STATE_RELEASED,
     BUTTON_STATE_PRESSING,
