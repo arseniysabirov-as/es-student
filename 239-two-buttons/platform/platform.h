@@ -5,8 +5,8 @@
 
 // номер кнопки на плате; сколько кнопок, знает только platform
 typedef enum {
-    PLATFORM_BUTTON_1,      // GP15 — переключает состояние светодиода
-    PLATFORM_BUTTON_2,      // GP14 — переключает период мигания
+    PLATFORM_BUTTON_LED,        // GP15 — состояние светодиода
+    PLATFORM_BUTTON_PERIOD,     // GP14 — период мигания
     PLATFORM_BUTTON_COUNT
 } platform_button_t;
 

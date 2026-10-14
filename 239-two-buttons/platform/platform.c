@@ -5,8 +5,8 @@
 
 // номер вывода каждой кнопки — знание платформы, наружу не торчит
 static const uint button_pins[PLATFORM_BUTTON_COUNT] = {
-    [PLATFORM_BUTTON_1] = 15u,
-    [PLATFORM_BUTTON_2] = 14u,
+    [PLATFORM_BUTTON_LED] = 15u,
+    [PLATFORM_BUTTON_PERIOD] = 14u,
 };
 
 void platform_init(void)

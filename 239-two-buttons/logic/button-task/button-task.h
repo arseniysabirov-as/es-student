@@ -7,8 +7,11 @@
 // функция, которую задача вызывает на каждое нажатие этой кнопки
 typedef void (*button_task_callback_t)(void);
 
-// инициализирует одну кнопку: номер и её действие на нажатие
-void button_task_init(platform_button_t button, button_task_callback_t on_press);
+// on_press      — короткое нажатие (может быть NULL)
+// on_long_press — долгое нажатие, дольше 1 с (NULL, если не нужно)
+void button_task_init(platform_button_t button,
+                      button_task_callback_t on_press,
+                      button_task_callback_t on_long_press);
 
 // обработчик в суперцикле: обходит все кнопки платы
 void button_task_handle(void);

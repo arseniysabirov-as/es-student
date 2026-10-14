@@ -17,4 +17,5 @@ led_state_t led_task_get_state(void);
 bool        led_task_set_period_ms(uint32_t period_ms);
 uint32_t    led_task_get_period_ms(void);
 void        led_task_next_state(void);
-void led_task_next_period(void);
+void        led_task_next_period(void);
+void        led_task_blink(void);

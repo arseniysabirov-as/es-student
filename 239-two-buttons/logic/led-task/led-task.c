@@ -89,3 +89,9 @@ void led_task_next_period(void)
         break;
     }
 }
+
+// долгое нажатие: перевести светодиод в состояние «мигает»
+void led_task_blink(void)
+{
+    led_task_set_state(LED_STATE_BLINK);
+}

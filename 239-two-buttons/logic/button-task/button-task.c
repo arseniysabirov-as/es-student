@@ -1,9 +1,12 @@
 #include "button-task/button-task.h"
 #include "platform/platform.h"
 #include "systime/systime.h"
+#include <stddef.h>
 
 // время дребезга: 20 мс, выражено в микросекундах
 #define DEBOUNCE_US (20 * 1000)
+// порог долгого нажатия: 1 с, выражен в микросекундах
+#define LONG_PRESS_US (1000 * 1000)
 
 typedef enum {
     BUTTON_STATE_RELEASED,
@@ -15,24 +18,32 @@ typedef enum {
 typedef struct {
     button_state_t         state;
     uint64_t               changed_us;
+    uint64_t               pressed_us;
     uint32_t               press_count;
     button_task_callback_t on_press;
+    button_task_callback_t on_long_press;   // NULL — долгого действия нет
+    bool                   long_reported;   // долгое уже сообщено
 } button_task_data_t;
 
 // по одной машине на каждую кнопку платы
 static button_task_data_t buttons[PLATFORM_BUTTON_COUNT];
 
-void button_task_init(platform_button_t button, button_task_callback_t on_press)
+void button_task_init(platform_button_t button,
+                      button_task_callback_t on_press,
+                      button_task_callback_t on_long_press)
 {
     if (button >= PLATFORM_BUTTON_COUNT)
     {
         return;
     }
 
-    buttons[button].state       = BUTTON_STATE_RELEASED;
-    buttons[button].changed_us  = 0;
-    buttons[button].press_count = 0;
-    buttons[button].on_press    = on_press;
+    buttons[button].state         = BUTTON_STATE_RELEASED;
+    buttons[button].changed_us    = 0;
+    buttons[button].pressed_us    = 0;
+    buttons[button].press_count   = 0;
+    buttons[button].on_press      = on_press;
+    buttons[button].on_long_press = on_long_press;
+    buttons[button].long_reported = false;
 }
 
 static void button_task_handle_one(platform_button_t button, uint64_t now)
@@ -57,9 +68,12 @@ static void button_task_handle_one(platform_button_t button, uint64_t now)
         }
         else if (now - b->changed_us >= DEBOUNCE_US)
         {
-            b->state = BUTTON_STATE_PRESSED;
+            b->state       = BUTTON_STATE_PRESSED;
+            b->pressed_us  = now;
+            b->long_reported = false;
             b->press_count++;
-            if (b->on_press)
+            // у кнопки нет долгого действия — сообщаем о нажатии сразу
+            if (b->on_long_press == NULL && b->on_press != NULL)
             {
                 b->on_press();
             }
@@ -72,6 +86,14 @@ static void button_task_handle_one(platform_button_t button, uint64_t now)
             b->changed_us = now;
             b->state = BUTTON_STATE_RELEASING;
         }
+        else if (b->on_long_press != NULL
+                 && !b->long_reported
+                 && now - b->pressed_us >= LONG_PRESS_US)
+        {
+            // держат дольше 1 с — один раз сообщаем о долгом нажатии
+            b->long_reported = true;
+            b->on_long_press();
+        }
         break;
 
     case BUTTON_STATE_RELEASING:
@@ -82,6 +104,15 @@ static void button_task_handle_one(platform_button_t button, uint64_t now)
         else if (now - b->changed_us >= DEBOUNCE_US)
         {
             b->state = BUTTON_STATE_RELEASED;
+
+            // короткое нажатие сообщается при отпускании, если
+            // долгого действия у кнопки нет или долгое не сработало
+            if (b->on_long_press != NULL
+                && !b->long_reported
+                && b->on_press != NULL)
+            {
+                b->on_press();
+            }
         }
         break;
     }
