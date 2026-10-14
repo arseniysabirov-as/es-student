@@ -207,3 +207,5 @@ const api_command_t api_commands[] = {
     { "profiling",       "stopwatch results",                     cmd_profiling       },
     { "profiling_reset", "reset stopwatches",                     cmd_profiling_reset },
 };
+
+const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
