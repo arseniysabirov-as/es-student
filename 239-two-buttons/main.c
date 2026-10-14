@@ -31,7 +31,8 @@ int main(void)
 
     stdio_text_protocol_init();
     led_task_init();
-     // короткое нажатие первой кнопки — следующее состояние светодиода,
+
+    // короткое нажатие первой кнопки — следующее состояние светодиода,
     // долгое — мигание
     button_task_init(PLATFORM_BUTTON_LED,
                      led_task_next_state,
@@ -48,7 +49,7 @@ int main(void)
 
         profiling_start(STOPWATCH_COMMAND);
         const command_t *command = stdio_text_protocol_handle();
-        if (command != NULL) api_handle(command);
+        if (command != NULL)
         {
             api_handle(command);
         }

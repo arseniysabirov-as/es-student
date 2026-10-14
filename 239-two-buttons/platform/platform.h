@@ -12,6 +12,4 @@ typedef enum {
 
 void platform_init(void);
 void platform_led_set(bool on);
-
-// нажата ли кнопка с этим номером сейчас, без подавления дребезга
 bool platform_button_read(platform_button_t button);

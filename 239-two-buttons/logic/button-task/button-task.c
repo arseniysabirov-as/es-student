@@ -2,9 +2,9 @@
 #include "platform/platform.h"
 #include "systime/systime.h"
 #include <stddef.h>
-
 // время дребезга: 20 мс, выражено в микросекундах
 #define DEBOUNCE_US (20 * 1000)
+
 // порог долгого нажатия: 1 с, выражен в микросекундах
 #define LONG_PRESS_US (1000 * 1000)
 
@@ -17,15 +17,14 @@ typedef enum {
 
 typedef struct {
     button_state_t         state;
-    uint64_t               changed_us;
-    uint64_t               pressed_us;
+    uint64_t               changed_us;      // момент последней смены уровня
+    uint64_t               pressed_us;      // момент подтверждённого нажатия
     uint32_t               press_count;
     button_task_callback_t on_press;
     button_task_callback_t on_long_press;   // NULL — долгого действия нет
     bool                   long_reported;   // долгое уже сообщено
 } button_task_data_t;
 
-// по одной машине на каждую кнопку платы
 static button_task_data_t buttons[PLATFORM_BUTTON_COUNT];
 
 void button_task_init(platform_button_t button,
@@ -64,6 +63,7 @@ static void button_task_handle_one(platform_button_t button, uint64_t now)
     case BUTTON_STATE_PRESSING:
         if (!pressed)
         {
+            // дребезг или помеха
             b->state = BUTTON_STATE_RELEASED;
         }
         else if (now - b->changed_us >= DEBOUNCE_US)
@@ -72,6 +72,7 @@ static void button_task_handle_one(platform_button_t button, uint64_t now)
             b->pressed_us  = now;
             b->long_reported = false;
             b->press_count++;
+
             // у кнопки нет долгого действия — сообщаем о нажатии сразу
             if (b->on_long_press == NULL && b->on_press != NULL)
             {
@@ -134,7 +135,6 @@ bool button_task_is_pressed(platform_button_t button)
     {
         return false;
     }
-    // кнопка нажата и в PRESSED, и в RELEASING
     return buttons[button].state == BUTTON_STATE_PRESSED
         || buttons[button].state == BUTTON_STATE_RELEASING;
 }
