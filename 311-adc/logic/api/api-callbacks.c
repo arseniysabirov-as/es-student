@@ -203,20 +203,29 @@ static void cmd_get_voltage(const command_t *command)
     printf("voltage: %.3f V\n", (double)voltage);
 }
 
+// температура у platform, ответ temp: <температура> C
+static void cmd_get_temp(const command_t *command)
+{
+    (void)command;
+    float temp = platform_temp_read();
+    printf("temp: %.1f C\n", (double)temp);
+}
+
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
-    { "info",            "device passport",                       cmd_info            },
-    { "uptime",          "time since reset",                      cmd_uptime          },
-    { "led_enable",      "turn led on",                           cmd_led_enable      },
-    { "led_disable",     "turn led off",                          cmd_led_disable     },
-    { "led_blink",       "make led blink",                        cmd_led_blink       },
-    { "led_period",      "set blink period: led_period <ms>",     cmd_led_period      },
-    { "button",          "button state and press count",          cmd_button          },
-    { "pi_start",        "start pi calculation: pi_start [terms]",cmd_pi_start        },
-    { "pi",              "pi result or state",                    cmd_pi              },
-    { "profiling",       "stopwatch results",                     cmd_profiling       },
-    { "profiling_reset", "reset stopwatches",                     cmd_profiling_reset },
-    { "get_voltage", "voltage on GP26, ADC input 0", cmd_get_voltage },
+    { "info",            "device passport",                       cmd_info              },
+    { "uptime",          "time since reset",                      cmd_uptime            },
+    { "led_enable",      "turn led on",                           cmd_led_enable        },
+    { "led_disable",     "turn led off",                          cmd_led_disable       },
+    { "led_blink",       "make led blink",                        cmd_led_blink         },
+    { "led_period",      "set blink period: led_period <ms>",     cmd_led_period        },
+    { "button",          "button state and press count",          cmd_button            },
+    { "pi_start",        "start pi calculation: pi_start [terms]",cmd_pi_start          },
+    { "pi",              "pi result or state",                    cmd_pi                },
+    { "profiling",       "stopwatch results",                     cmd_profiling         },
+    { "profiling_reset", "reset stopwatches",                     cmd_profiling_reset   },
+    { "get_voltage",     "voltage on GP26, ADC input 0",          cmd_get_voltage       },
+    { "get_temp",        "chip temperature, degrees Celsius",     cmd_get_temp          },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
