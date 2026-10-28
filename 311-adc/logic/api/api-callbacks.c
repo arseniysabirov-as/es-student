@@ -16,6 +16,8 @@
 #include "pi-task/pi-task.h"
 #include "platform/platform.h"
 
+// период телеметрии по умолчанию
+#define TELEMETRY_DEFAULT_PERIOD_MS 100
 
 static bool parse_u32(const char *text, uint32_t *value)
 {
@@ -210,6 +212,48 @@ static void cmd_get_temp(const command_t *command)
     float temp = platform_temp_read();
     printf("temp: %.1f C\n", (double)temp);
 }
+void api_print_telemetry(const telemetry_record_t *record)
+{
+    printf("tm: %llu %.3f %.1f\n",
+           (unsigned long long)record->time_us,
+           (double)record->voltage_v,
+           (double)record->temp_c);
+}
+
+static void cmd_tm_start(const command_t *command)
+{
+    uint32_t period = TELEMETRY_DEFAULT_PERIOD_MS; 
+
+    if (command->argc > 1)
+    {
+        printf("error: usage tm_start [<period_ms>]\n");
+        return;
+    }
+
+    if (command->argc == 1)
+    {
+        if (!parse_u32(command->argv[0], &period))
+        {
+            printf("error: usage tm_start [<period_ms>]\n");
+            return;
+        }
+    }
+
+    if (!telemetry_task_start(period))
+    {
+        printf("error: period_ms must be at least 10\n");
+        return;
+    }
+
+    printf("telemetry: started, period %u ms\n", (unsigned)period);
+}
+
+static void cmd_tm_stop(const command_t *command)
+{
+    (void)command;
+    telemetry_task_stop();
+    printf("telemetry: stopped\n");
+}
 
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
@@ -226,6 +270,8 @@ const api_command_t api_commands[] = {
     { "profiling_reset", "reset stopwatches",                     cmd_profiling_reset   },
     { "get_voltage",     "voltage on GP26, ADC input 0",          cmd_get_voltage       },
     { "get_temp",        "chip temperature, degrees Celsius",     cmd_get_temp          },
+     { "tm_start", "start telemetry: tm_start [period_ms]",       cmd_tm_start          },
+    { "tm_stop",  "stop telemetry",                               cmd_tm_stop           },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
