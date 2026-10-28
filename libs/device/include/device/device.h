@@ -5,7 +5,7 @@
 #define DEVICE_NAME       "231-firmware-template"   // имя прошивки (по приложению Б)
 #define FIRMWARE_VERSION  "1.0.0"
 #define DEVICE_PROJECT    "231-firmware-template"
-#define DEVICE_REPO       "https://github.com/<ваш логин>/es-student"
+#define DEVICE_REPO       "https://github.com/arseniysabirov-as/es-student"
 
 #ifndef DEVICE_BOARD
 #define DEVICE_BOARD "unknown"
