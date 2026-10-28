@@ -255,6 +255,20 @@ static void cmd_tm_stop(const command_t *command)
     printf("telemetry: stopped\n");
 }
 
+static void cmd_charge_on(const command_t *command)
+{
+    (void)command;
+    platform_charge_set(true);
+    printf("charge: on\n");
+}
+
+static void cmd_charge_off(const command_t *command)
+{
+    (void)command;
+    platform_charge_set(false);
+    printf("charge: off\n");
+}
+
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
     { "info",            "device passport",                       cmd_info              },
@@ -272,6 +286,8 @@ const api_command_t api_commands[] = {
     { "get_temp",        "chip temperature, degrees Celsius",     cmd_get_temp          },
      { "tm_start", "start telemetry: tm_start [period_ms]",       cmd_tm_start          },
     { "tm_stop",  "stop telemetry",                               cmd_tm_stop           },
+    { "charge_on",  "turn on RC charge",  cmd_charge_on  },
+    { "charge_off", "turn off RC charge", cmd_charge_off },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);

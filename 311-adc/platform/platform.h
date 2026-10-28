@@ -11,3 +11,6 @@ float platform_voltage_read(void);
 
 // температура кристалла по встроенному датчику, градусы Цельсия
 float platform_temp_read(void); 
+
+// управление зарядом RC-цепи через вывод GP22
+void platform_charge_set(bool on); 

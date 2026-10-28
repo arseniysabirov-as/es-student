@@ -14,6 +14,9 @@
 #define ADC_VREF_V 3.3f
 #define ADC_LEVELS 4096
 
+// вывод, через резистор заряжающий конденсатор RC-цепи
+#define CHARGE_PIN 22 
+
 void platform_init(void)
 {
     stdio_init_all();
@@ -28,6 +31,10 @@ void platform_init(void)
     adc_init();
     adc_gpio_init(ADC_PIN);
     adc_set_temp_sensor_enabled(true);
+
+    gpio_init(CHARGE_PIN);
+    gpio_set_dir(CHARGE_PIN, GPIO_OUT);
+    gpio_put(CHARGE_PIN, false); // Изначально ноль, конденсатор разряжен
 }
 
 void platform_led_set(bool on)
@@ -53,4 +60,9 @@ float platform_temp_read(void)
     uint16_t raw = adc_read();
     float voltage = raw * ADC_VREF_V / ADC_LEVELS;
     return 27.0f - (voltage - 0.706f) / 0.001721f;
+}
+
+void platform_charge_set(bool on)
+{
+    gpio_put(CHARGE_PIN, on);
 }
