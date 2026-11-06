@@ -477,6 +477,12 @@ bool platform_watchdog_caused_reset(uint32_t *restarts)
 }
 
 
+
+float platform_adc_volts(float code)
+{
+    return code * ADC_VREF_V / ADC_LEVELS;
+}
+
 void platform_init(void)
 {
     // 1. причина прошлого сброса; счётчик сбросов подряд хранит scratch-регистр 0,

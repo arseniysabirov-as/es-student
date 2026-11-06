@@ -6,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "device/device.h"
 #include "firmware.h"
@@ -314,6 +315,50 @@ static void cmd_timer_blink_stop(const command_t *command)
     printf("timer_blink: stopped, %u toggles\n", (unsigned)toggles);
 }
 
+// среднее и отклонение от среднего в кодах АЦП: среднеквадратичное и наибольшее
+// start_block(): запуск захвата теперь нужен трём командам, вынести его из cmd_dma_cap();
+// идёт телеметрия или задача не приняла захват — error: adc busy
+static void block_stats(const uint16_t *samples, uint32_t count, float *mean, float *rms, float *peak)
+{
+    uint32_t sum = 0;
+    for (uint32_t i = 0; i < count; i++)
+    {
+        sum += samples[i];
+    }
+    int32_t center = (int32_t)(sum / count);
+
+    // в целых числах: в float на 8192 отсчётах ядро считало бы в 24 раза дольше
+    uint64_t squares = 0;
+    uint32_t largest = 0;
+    for (uint32_t i = 0; i < count; i++)
+    {
+        int32_t deviation = (int32_t)samples[i] - center;
+        uint32_t size = deviation < 0 ? -deviation : deviation;
+        squares += (uint64_t)(deviation * deviation);
+        if (size > largest)
+        {
+            largest = size;
+        }
+    }
+
+    *mean = (float)sum / count;
+    *rms = sqrtf((float)squares / count);
+    *peak = (float)largest;
+}
+
+static bool start_block(uint32_t count, block_task_callback_t callback)
+{
+    if (platform_adc_busy() || telemetry_task_get_state() == TELEMETRY_STATE_RUN) {
+        printf("error: adc busy\n");
+        return false;
+    }
+    if (!block_task_start(count, callback)) {
+        printf("error: adc busy\n");
+        return false;
+    }
+    return true;
+}
+
 // cmd_cap_start(): аргументов не два или не числа — error: usage cap_start <N> <period_us>
 // N = 0, N > PLATFORM_CAPTURE_MAX или период меньше 10 мкс —
 //     error: N must be 1..2000, period_us at least 10
@@ -416,22 +461,11 @@ static void cmd_dma_cap(const command_t *command)
         printf("error: usage dma_cap <N>\n");
         return;
     }
-
     if (count == 0 || count > PLATFORM_BLOCK_MAX) {
         printf("error: N must be 1..8192\n");
         return;
     }
-
-    if (platform_adc_busy() || telemetry_task_get_state() == TELEMETRY_STATE_RUN) {
-        printf("error: adc busy\n");
-        return;
-    }
-
-    if (!block_task_start(count, print_dma_cap)) {
-        printf("error: adc busy\n");
-        return;
-    }
-    // Ответ придёт, когда блок будет готов
+    start_block(count, print_dma_cap); // Используем новый хелпер
 }
 
 #define STREAM_BLINK_PERIOD_MS 250
@@ -563,6 +597,76 @@ static void cmd_reset_reason(const command_t *command)
     }
 }
 
+
+#define MIC_DEFAULT_WINDOW_MS 100
+
+// Вызывается задачей block-task, когда блок захвачен
+
+// print_mic_bias(): среднее блока в вольтах, строка mic: bias <В, 3 знака> V
+static void print_mic_bias(const uint16_t *samples, uint32_t count, uint32_t time_us)
+{
+    (void)time_us;
+    float mean, rms, peak;
+    block_stats(samples, count, &mean, &rms, &peak);
+
+    float volts = platform_adc_volts(mean);
+    printf("mic: bias %.3f V\n", (double)volts);
+}
+
+// print_mic_level(): отклонения в милливольтах, окно — count * 1000 / 44100,
+//     строка mic: level <мВ, 1 знак> mV rms, peak <мВ, 1 знак> mV, <окно> ms
+static void print_mic_level(const uint16_t *samples, uint32_t count, uint32_t time_us)
+{
+    (void)time_us;
+    float mean, rms, peak;
+    block_stats(samples, count, &mean, &rms, &peak);
+
+    float rms_v = platform_adc_volts(rms);
+    float peak_v = platform_adc_volts(peak);
+
+    uint32_t ms = (uint32_t)(((uint64_t)count * 1000) / PLATFORM_SAMPLE_RATE_HZ);
+
+    printf("mic: level %.1f mV rms, peak %.1f mV, %u ms\n",
+           (double)(rms_v * 1000.0f), (double)(peak_v * 1000.0f), (unsigned)ms);
+}
+
+// Обработчики команд
+// cmd_mic_bias(): захват 4410 отсчётов с функцией print_mic_bias
+static void cmd_mic_bias(const command_t *command)
+{
+    (void)command;
+    start_block(4410, print_mic_bias); // 100 мс при 44.1 кГц
+}
+
+// cmd_mic_level(): больше одного аргумента или не число — error: usage mic_level [<ms>]
+//     отсчётов окна 0 или больше 8192 — error: ms must be 1..185,
+//     число отсчётов считать в uint64_t, аргумент может быть любым
+//     захват с функцией print_mic_level
+static void cmd_mic_level(const command_t *command)
+{
+    uint32_t ms = MIC_DEFAULT_WINDOW_MS;
+
+    if (command->argc > 1) {
+        printf("error: usage mic_level [<ms>]\n");
+        return;
+    }
+    if (command->argc == 1) {
+        if (!parse_u32(command->argv[0], &ms)) {
+            printf("error: usage mic_level [<ms>]\n");
+            return;
+        }
+    }
+
+    if (ms == 0 || ms > 185) {
+        printf("error: ms must be 1..185\n");
+        return;
+    }
+
+    // Считаем количество отсчётов. Используем uint64_t, чтобы избежать переполнения.
+    uint32_t count = (uint32_t)(((uint64_t)ms * PLATFORM_SAMPLE_RATE_HZ) / 1000);
+    start_block(count, print_mic_level);
+}
+
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
     { "info",               "device passport",                       cmd_info              },
@@ -593,6 +697,8 @@ const api_command_t api_commands[] = {
     { "wdt_enable",         "enable watchdog: wdt_enable <timeout_ms>", cmd_wdt_enable      },
     { "hang",               "hang the superloop for testing",           cmd_hang            },
     { "reset_reason",       "print previous reset reason",              cmd_reset_reason    },
+    { "mic_bias",           "measure microphone DC bias",               cmd_mic_bias  },
+    { "mic_level",          "measure microphone level: [<ms>]",         cmd_mic_level },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);

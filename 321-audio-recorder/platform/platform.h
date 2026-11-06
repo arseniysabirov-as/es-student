@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+// код АЦП в вольты; код может быть дробным, например средним
+float platform_adc_volts(float code);   
 
 // Сторожевой таймер ---
 // false — таймаут больше 8388 мс или равен нулю
