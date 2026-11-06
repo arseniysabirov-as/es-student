@@ -16,6 +16,7 @@
 #include "pi-task/pi-task.h"
 #include "platform/platform.h"
 #include "led-task/led-task.h"
+#include "block-task/block-task.h"
 
 // период телеметрии по умолчанию
 #define TELEMETRY_DEFAULT_PERIOD_MS 100
@@ -381,6 +382,57 @@ static void cmd_cap_dump(const command_t *command)
     printf("\n");
 }
 
+// print_dma_cap(): наименьший, наибольший и средний код блока;
+// расчёт времени — count * 1000000 / PLATFORM_SAMPLE_RATE_HZ, в uint64_t;
+// строка dma_cap: <N> samples in <мкс> us, expected <мкс> us, min <код> max <код> mean <код, 1 знак>
+static void print_dma_cap(const uint16_t *samples, uint32_t count, uint32_t time_us)
+{
+    uint32_t min_code = 4095, max_code = 0;
+    uint64_t sum = 0;
+
+    for (uint32_t i = 0; i < count; i++) {
+        if (samples[i] < min_code) min_code = samples[i];
+        if (samples[i] > max_code) max_code = samples[i];
+        sum += samples[i];
+    }
+
+    float mean = count > 0 ? (float)sum / count : 0.0f;
+    uint32_t expected_us = (uint32_t)((uint64_t)count * 1000000ULL / PLATFORM_SAMPLE_RATE_HZ);
+
+    printf("dma_cap: %u samples in %u us, expected %u us, min %u max %u mean %.1f\n",
+           (unsigned)count, (unsigned)time_us, (unsigned)expected_us,
+           (unsigned)min_code, (unsigned)max_code, (double)mean);
+}
+
+// cmd_dma_cap(): аргумент не один или не число — error: usage dma_cap <N>
+// N = 0 или больше PLATFORM_BLOCK_MAX — error: N must be 1..8192
+// идёт телеметрия или задача не приняла захват — error: adc busy
+// иначе захват с функцией print_dma_cap, ответ придёт, когда блок будет готов
+static void cmd_dma_cap(const command_t *command)
+{
+    uint32_t count;
+
+    if (command->argc != 1 || !parse_u32(command->argv[0], &count)) {
+        printf("error: usage dma_cap <N>\n");
+        return;
+    }
+
+    if (count == 0 || count > PLATFORM_BLOCK_MAX) {
+        printf("error: N must be 1..8192\n");
+        return;
+    }
+
+    if (platform_adc_busy() || telemetry_task_get_state() == TELEMETRY_STATE_RUN) {
+        printf("error: adc busy\n");
+        return;
+    }
+
+    if (!block_task_start(count, print_dma_cap)) {
+        printf("error: adc busy\n");
+        return;
+    }
+    // Ответ придёт, когда блок будет готов
+}
 
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
@@ -405,6 +457,7 @@ const api_command_t api_commands[] = {
     { "timer_blink_stop", "stop timer blink, number of toggles", cmd_timer_blink_stop },
     { "cap_start", "capture ADC via timer: cap_start <N> <period_us>", cmd_cap_start },
     { "cap_dump",  "dump capture results",                             cmd_cap_dump  },
+    { "dma_cap", "capture block via DMA: dma_cap <N>", cmd_dma_cap },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);

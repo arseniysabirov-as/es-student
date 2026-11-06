@@ -9,6 +9,19 @@
 bool platform_capture_start(uint32_t count, uint32_t period_us);
 bool platform_capture_done(void);
 
+// частота отсчётов АЦП в блоке и потоке
+#define PLATFORM_SAMPLE_RATE_HZ 44100
+
+// блок count отсчётов GP26 через DMA, о конце сообщает прерывание DMA;
+// false — АЦП занят или count больше PLATFORM_BLOCK_MAX
+#define PLATFORM_BLOCK_MAX 8192
+bool platform_block_start(uint32_t count);
+bool platform_block_done(void);
+const uint16_t *platform_block_samples(void);
+
+// время захвата блока, от запуска АЦП до последнего отсчёта
+uint32_t platform_block_time_us(void);
+
 void platform_init(void);
 void platform_led_set(bool on);
 bool platform_button_read(void);
