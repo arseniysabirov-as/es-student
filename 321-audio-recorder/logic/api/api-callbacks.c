@@ -522,6 +522,47 @@ static void cmd_generate_tone(const command_t *command)
     }
 }
 
+static void cmd_wdt_enable(const command_t *command)
+{
+    uint32_t timeout_ms;
+
+    if (command->argc != 1 || !parse_u32(command->argv[0], &timeout_ms)) {
+        printf("error: usage wdt_enable <timeout_ms>\n");
+        return;
+    }
+
+    if (!platform_watchdog_enable(timeout_ms)) {
+        printf("error: timeout_ms must be 1..8388\n");
+        return;
+    }
+
+    printf("wdt: enabled, timeout %u ms\n", (unsigned)timeout_ms);
+}
+
+static void cmd_hang(const command_t *command)
+{
+    (void)command;
+    printf("hang: superloop stopped\n");
+    
+    // Намеренно вешаем суперцикл. 
+    // Прерывания (будильники, USB) продолжают работать!
+    while (1) {
+    }
+}
+
+static void cmd_reset_reason(const command_t *command)
+{
+    (void)command;
+    uint32_t restarts;
+    bool by_watchdog = platform_watchdog_caused_reset(&restarts);
+
+    if (by_watchdog) {
+        printf("reset: watchdog, restarts %u\n", (unsigned)restarts);
+    } else {
+        printf("reset: other, restarts %u\n", (unsigned)restarts);
+    }
+}
+
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
     { "info",               "device passport",                       cmd_info              },
@@ -549,6 +590,9 @@ const api_command_t api_commands[] = {
     { "stream_start",       "start audio stream: stream_start [8|16]",cmd_stream_start      },
     { "stream_stop",        "stop audio stream",                     cmd_stream_stop        },
     { "generate_tone",      "generate test tone: generate_tone <Hz>",cmd_generate_tone      },
+    { "wdt_enable",         "enable watchdog: wdt_enable <timeout_ms>", cmd_wdt_enable      },
+    { "hang",               "hang the superloop for testing",           cmd_hang            },
+    { "reset_reason",       "print previous reset reason",              cmd_reset_reason    },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);

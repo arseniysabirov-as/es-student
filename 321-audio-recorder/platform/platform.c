@@ -6,6 +6,7 @@
 #include "hardware/irq.h"
 #include "hardware/pwm.h"   
 #include "hardware/clocks.h"
+#include "hardware/watchdog.h"
 #include <stddef.h>
 
 #define TONE_PIN 20
@@ -28,6 +29,11 @@
 
 // частота clk_adc, от неё делитель отсчитывает шаг
 #define ADC_CLOCK_HZ 48000000.0f
+
+#define WATCHDOG_MAX_MS 8388
+
+static bool     watchdog_reset = false;
+static uint32_t watchdog_restarts = 0;
 
 static repeating_timer_t    blink_timer;
 static bool                 blink_running = false;
@@ -449,8 +455,42 @@ bool platform_tone_set(uint32_t freq_hz)
     return true;
 }
 
+bool platform_watchdog_enable(uint32_t timeout_ms)
+{
+    if (timeout_ms == 0 || timeout_ms > WATCHDOG_MAX_MS) {
+        return false;
+    }
+    // true — не считать таймаут, пока ядро остановлено отладчиком
+    watchdog_enable(timeout_ms, true);
+    return true;
+}
+
+void platform_watchdog_feed(void)
+{
+    watchdog_update();
+}
+
+bool platform_watchdog_caused_reset(uint32_t *restarts)
+{
+    *restarts = watchdog_restarts;
+    return watchdog_reset;
+}
+
+
 void platform_init(void)
 {
+    // 1. причина прошлого сброса; счётчик сбросов подряд хранит scratch-регистр 0,
+    // его не стирает сброс по сторожевому таймеру
+    watchdog_reset = watchdog_enable_caused_reboot();
+
+    // 2. Считаем перезапуски в scratch-регистре 0 (он не стирается при WDT-сбросе)
+    if (watchdog_reset) {
+        watchdog_hw->scratch[0]++;
+    } else {
+        watchdog_hw->scratch[0] = 0;
+    }
+    watchdog_restarts = watchdog_hw->scratch[0];
+
     stdio_init_all();
 
     gpio_init(LED_PIN);
@@ -483,3 +523,4 @@ void platform_init(void)
     platform_tone_init();
 
 }
+

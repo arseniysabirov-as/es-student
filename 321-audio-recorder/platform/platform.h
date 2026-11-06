@@ -4,6 +4,15 @@
 #include <stdint.h>
 
 
+// Сторожевой таймер ---
+// false — таймаут больше 8388 мс или равен нулю
+bool platform_watchdog_enable(uint32_t timeout_ms);
+void platform_watchdog_feed(void);
+//--------------------
+
+// был ли последний сброс по сторожевому таймеру и сколько таких сбросов подряд
+bool platform_watchdog_caused_reset(uint32_t *restarts);
+
 // генерация тона на GP20; 0 — выключить; false — частота вне 20..20000
 bool platform_tone_set(uint32_t freq_hz);
 
