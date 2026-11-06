@@ -19,6 +19,7 @@ typedef enum {
     STOPWATCH_PI,
     STOPWATCH_TELEMETRY,
     STOPWATCH_BLOCK,
+    STOPWATCH_STREAM,
 } stopwatch_id_t;
 
 int main(void)
@@ -39,14 +40,20 @@ int main(void)
     led_task_init();
     button_task_init(led_task_next_state);
     telemetry_task_init(api_print_telemetry);
+    profiling_stopwatch_init(STOPWATCH_STREAM, "stream");
+    stream_task_init(api_send_frame);
 
     while (1)
     {
         profiling_start(STOPWATCH_LOOP);
 
-        profiling_start(STOPWATCH_BLOCK);   // <-- НОВОЕ
+        profiling_start(STOPWATCH_BLOCK);  
         block_task_handle();
         profiling_stop(STOPWATCH_BLOCK);
+
+        profiling_start(STOPWATCH_STREAM);
+        stream_task_handle();
+        profiling_stop(STOPWATCH_STREAM);
 
         profiling_start(STOPWATCH_COMMAND);
         const command_t *command = stdio_text_protocol_handle();

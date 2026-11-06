@@ -434,30 +434,100 @@ static void cmd_dma_cap(const command_t *command)
     // Ответ придёт, когда блок будет готов
 }
 
+#define STREAM_BLINK_PERIOD_MS 250
+
+void api_send_frame(const stream_header_t *header, const uint8_t *data, uint32_t bytes)
+{
+    platform_write(header, sizeof(*header));
+    platform_write(data, bytes);
+}
+// cmd_stream_start(): больше одного аргумента, не число или не 8 и не 16 —
+//     error: usage stream_start [8|16]
+// идёт телеметрия или задача не начала поток — error: adc busy
+// ответ stream: started, 44100 Hz, <разрядность> bit
+// индикатор записи: мигание с периодом STREAM_BLINK_PERIOD_MS,
+//     задачу светодиода — в состояние «выключен»
+static void cmd_stream_start(const command_t *command)
+{
+    uint8_t bits = 16;
+
+    if (command->argc > 1) {
+        printf("error: usage stream_start [8|16]\n");
+        return;
+    }
+
+    if (command->argc == 1) {
+        uint32_t val;
+        if (!parse_u32(command->argv[0], &val) || (val != 8 && val != 16)) {
+            printf("error: usage stream_start [8|16]\n");
+            return;
+        }
+        bits = (uint8_t)val;
+    }
+
+    if (platform_adc_busy() || telemetry_task_get_state() == TELEMETRY_STATE_RUN) {
+        printf("error: adc busy\n");
+        return;
+    }
+
+    if (!stream_task_start(bits)) {
+        printf("error: adc busy\n");
+        return;
+    }
+
+    led_task_set_state(LED_STATE_OFF);
+    platform_blink_start(STREAM_BLINK_PERIOD_MS);
+
+    printf("stream: started, 44100 Hz, %u bit\n", (unsigned)bits);
+}
+
+
+// cmd_stream_stop(): если поток идёт — остановить задачу и мигание;
+// ответ stream: stopped, <кадров> frames, <отсчётов> samples, <переполнений> overruns
+static void cmd_stream_stop(const command_t *command)
+{
+    (void)command;
+
+    if (stream_task_get_state() == STREAM_STATE_RUN) {
+        stream_task_stop();
+        platform_blink_stop();
+    }
+
+    printf("stream: stopped, %u frames, %u samples, %u overruns\n",
+           (unsigned)stream_task_get_frames(),
+           (unsigned)stream_task_get_samples(),
+           (unsigned)stream_task_get_overruns());
+}
+// main.c: секундомер "stream", stream_task_init(api_send_frame),
+// stream_task_handle() в суперцикле
+
+
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
-    { "info",            "device passport",                       cmd_info              },
-    { "uptime",          "time since reset",                      cmd_uptime            },
-    { "led_enable",      "turn led on",                           cmd_led_enable        },
-    { "led_disable",     "turn led off",                          cmd_led_disable       },
-    { "led_blink",       "make led blink",                        cmd_led_blink         },
-    { "led_period",      "set blink period: led_period <ms>",     cmd_led_period        },
-    { "button",          "button state and press count",          cmd_button            },
-    { "pi_start",        "start pi calculation: pi_start [terms]",cmd_pi_start          },
-    { "pi",              "pi result or state",                    cmd_pi                },
-    { "profiling",       "stopwatch results",                     cmd_profiling         },
-    { "profiling_reset", "reset stopwatches",                     cmd_profiling_reset   },
-    { "get_voltage",     "voltage on GP26, ADC input 0",          cmd_get_voltage       },
-    { "get_temp",        "chip temperature, degrees Celsius",     cmd_get_temp          },
-     { "tm_start", "start telemetry: tm_start [period_ms]",       cmd_tm_start          },
-    { "tm_stop",  "stop telemetry",                               cmd_tm_stop           },
-    { "charge_on",  "turn on RC charge",                            cmd_charge_on  },
-    { "charge_off", "turn off RC charge",                           cmd_charge_off },
-    { "timer_blink_start", "blink led by timer: timer_blink_start <period_ms>", cmd_timer_blink_start },
-    { "timer_blink_stop", "stop timer blink, number of toggles", cmd_timer_blink_stop },
-    { "cap_start", "capture ADC via timer: cap_start <N> <period_us>", cmd_cap_start },
-    { "cap_dump",  "dump capture results",                             cmd_cap_dump  },
-    { "dma_cap", "capture block via DMA: dma_cap <N>", cmd_dma_cap },
+    { "info",               "device passport",                       cmd_info              },
+    { "uptime",             "time since reset",                      cmd_uptime            },
+    { "led_enable",         "turn led on",                           cmd_led_enable        },
+    { "led_disable",        "turn led off",                          cmd_led_disable       },
+    { "led_blink",          "make led blink",                        cmd_led_blink         },
+    { "led_period",         "set blink period: led_period <ms>",     cmd_led_period        },
+    { "button",             "button state and press count",          cmd_button            },
+    { "pi_start",           "start pi calculation: pi_start [terms]",cmd_pi_start          },
+    { "pi",                 "pi result or state",                    cmd_pi                },
+    { "profiling",          "stopwatch results",                     cmd_profiling         },
+    { "profiling_reset",    "reset stopwatches",                     cmd_profiling_reset   },
+    { "get_voltage",        "voltage on GP26, ADC input 0",          cmd_get_voltage       },
+    { "get_temp",           "chip temperature, degrees Celsius",     cmd_get_temp          },
+    { "tm_start",           "start telemetry: tm_start [period_ms]", cmd_tm_start          },
+    { "tm_stop",            "stop telemetry",                        cmd_tm_stop           },
+    { "charge_on",          "turn on RC charge",                     cmd_charge_on          },
+    { "charge_off",         "turn off RC charge",                    cmd_charge_off         },
+    { "timer_blink_start",  "blink led by timer: timer_blink_start <period_ms>", cmd_timer_blink_start  },
+    { "timer_blink_stop",   "stop timer blink, number of toggles",               cmd_timer_blink_stop   },
+    { "cap_start",          "capture ADC via timer: cap_start <N> <period_us>",  cmd_cap_start          },
+    { "cap_dump",           "dump capture results",                  cmd_cap_dump           },
+    { "dma_cap",            "capture block via DMA: dma_cap <N>",    cmd_dma_cap            },
+    { "stream_start",       "start audio stream: stream_start [8|16]",cmd_stream_start      },
+    { "stream_stop",        "stop audio stream",                     cmd_stream_stop        },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
