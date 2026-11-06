@@ -201,6 +201,10 @@ static void cmd_profiling_reset(const command_t *command)
 // напряжение на GP26 у platform, ответ voltage: <напряжение> V
 static void cmd_get_voltage(const command_t *command)
 {
+     if (platform_adc_busy()) {
+        printf("error: adc busy\n");
+        return;
+    }
     (void)command;
     float voltage = platform_voltage_read();
     printf("voltage: %.3f V\n", (double)voltage);
@@ -209,6 +213,10 @@ static void cmd_get_voltage(const command_t *command)
 // температура у platform, ответ temp: <температура> C
 static void cmd_get_temp(const command_t *command)
 {
+     if (platform_adc_busy()) {
+        printf("error: adc busy\n");
+        return;
+    }
     (void)command;
     float temp = platform_temp_read();
     printf("temp: %.1f C\n", (double)temp);
@@ -224,6 +232,11 @@ void api_print_telemetry(const telemetry_record_t *record)
 static void cmd_tm_start(const command_t *command)
 {
     uint32_t period = TELEMETRY_DEFAULT_PERIOD_MS; 
+
+     if (platform_adc_busy()) {
+        printf("error: adc busy\n");
+        return;
+    }
 
     if (command->argc > 1)
     {
@@ -300,6 +313,74 @@ static void cmd_timer_blink_stop(const command_t *command)
     printf("timer_blink: stopped, %u toggles\n", (unsigned)toggles);
 }
 
+// cmd_cap_start(): аргументов не два или не числа — error: usage cap_start <N> <period_us>
+// N = 0, N > PLATFORM_CAPTURE_MAX или период меньше 10 мкс —
+//     error: N must be 1..2000, period_us at least 10
+// идёт телеметрия или platform не начал захват — error: adc busy
+// ответ capture: started, <N> samples, period <период> us
+static void cmd_cap_start(const command_t *command)
+{
+    uint32_t count, period_us;
+
+    if (command->argc != 2) {
+        printf("error: usage cap_start <N> <period_us>\n");
+        return;
+    }
+
+    if (!parse_u32(command->argv[0], &count) || !parse_u32(command->argv[1], &period_us)) {
+        printf("error: usage cap_start <N> <period_us>\n");
+        return;
+    }
+
+    if (count == 0 || count > PLATFORM_CAPTURE_MAX || period_us < 10) {
+        printf("error: N must be 1..2000, period_us at least 10\n");
+        return;
+    }
+
+    // Проверка на телеметрию (если она использует АЦП, мы не должны начинать)
+    if (platform_adc_busy() || telemetry_task_get_state() == TELEMETRY_STATE_RUN) {
+        printf("error: adc busy\n");
+        return;
+    }
+
+    if (!platform_capture_start(count, period_us)) {
+        printf("error: adc busy\n");
+        return;
+    }
+
+    printf("capture: started, %u samples, period %u us\n", (unsigned)count, (unsigned)period_us);
+}
+
+// cmd_cap_dump(): захвата не было — error: no capture
+// строка capture: <N> samples, period <период> us, interval <мин>..<макс> us, handler <доля> %
+// коды строками cap: по 16
+static void cmd_cap_dump(const command_t *command)
+{
+    (void)command;
+
+    if (!platform_capture_done()) {
+        printf("error: no capture\n");
+        return;
+    }
+
+    platform_capture_t cap;
+    platform_capture_get(&cap);
+
+    printf("capture: %u samples, period %u us, interval %u..%u us, handler %.1f %%\n",
+           (unsigned)cap.count, (unsigned)cap.period_us,
+           (unsigned)cap.min_interval_us, (unsigned)cap.max_interval_us,
+           (double)cap.handler_percent);
+
+    for (uint32_t i = 0; i < cap.count; i++) {
+        if (i % 16 == 0) {
+            if (i > 0) printf("\n");
+            printf("cap:");
+        }
+        printf(" %u", (unsigned)cap.samples[i]);
+    }
+    printf("\n");
+}
+
 
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
@@ -322,6 +403,8 @@ const api_command_t api_commands[] = {
     { "charge_off", "turn off RC charge",                           cmd_charge_off },
     { "timer_blink_start", "blink led by timer: timer_blink_start <period_ms>", cmd_timer_blink_start },
     { "timer_blink_stop", "stop timer blink, number of toggles", cmd_timer_blink_stop },
+    { "cap_start", "capture ADC via timer: cap_start <N> <period_us>", cmd_cap_start },
+    { "cap_dump",  "dump capture results",                             cmd_cap_dump  },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
