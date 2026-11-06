@@ -501,6 +501,26 @@ static void cmd_stream_stop(const command_t *command)
 // main.c: секундомер "stream", stream_task_init(api_send_frame),
 // stream_task_handle() в суперцикле
 
+static void cmd_generate_tone(const command_t *command)
+{
+    uint32_t freq_hz;
+
+    if (command->argc != 1 || !parse_u32(command->argv[0], &freq_hz)) {
+        printf("error: usage generate_tone <Hz>\n");
+        return;
+    }
+
+    if (!platform_tone_set(freq_hz)) {
+        printf("error: Hz must be 0 or 20..20000\n");
+        return;
+    }
+
+    if (freq_hz == 0) {
+        printf("tone: off\n");
+    } else {
+        printf("tone: %u Hz\n", (unsigned)freq_hz);
+    }
+}
 
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
@@ -528,6 +548,7 @@ const api_command_t api_commands[] = {
     { "dma_cap",            "capture block via DMA: dma_cap <N>",    cmd_dma_cap            },
     { "stream_start",       "start audio stream: stream_start [8|16]",cmd_stream_start      },
     { "stream_stop",        "stop audio stream",                     cmd_stream_stop        },
+    { "generate_tone",      "generate test tone: generate_tone <Hz>",cmd_generate_tone      },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);

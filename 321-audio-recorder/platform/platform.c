@@ -4,7 +4,12 @@
 #include "hardware/timer.h"
 #include "hardware/dma.h"
 #include "hardware/irq.h"
+#include "hardware/pwm.h"   
+#include "hardware/clocks.h"
 #include <stddef.h>
+
+#define TONE_PIN 20
+#define TONE_COUNT_HZ 1000000 // Приводим системную частоту к 1 МГц (1 такт = 1 мкс)
 
 #define LED_PIN     25u
 #define BUTTON_PIN  15u
@@ -404,6 +409,46 @@ uint32_t platform_stream_overruns(void)
 }
 
 
+// Настройка ШИМ в platform_init()
+void platform_tone_init(void)
+{
+    gpio_set_function(TONE_PIN, GPIO_FUNC_PWM);
+    uint slice_num = pwm_gpio_to_slice_num(TONE_PIN);
+    
+    // Настраиваем делитель: sys_clk / 1 000 000
+    float div = (float)clock_get_hz(clk_sys) / TONE_COUNT_HZ;
+    pwm_set_clkdiv(slice_num, div);
+    
+    // Изначально тишина (уровень 0)
+    pwm_set_wrap(slice_num, 1000);
+    pwm_set_gpio_level(TONE_PIN, 0);
+    pwm_set_enabled(slice_num, true);
+}
+
+bool platform_tone_set(uint32_t freq_hz)
+{
+    if (freq_hz != 0 && (freq_hz < 20 || freq_hz > 20000)) {
+        return false;
+    }
+
+    uint slice_num = pwm_gpio_to_slice_num(TONE_PIN);
+
+    if (freq_hz == 0) {
+        pwm_set_gpio_level(TONE_PIN, 0);
+    } else {
+        // Период в микросекундах (так как 1 такт = 1 мкс)
+        uint32_t period_us = TONE_COUNT_HZ / freq_hz;
+        
+        // Счётчик считает от 0 до wrap
+        pwm_set_wrap(slice_num, period_us - 1);
+        
+        // Скважность 50% (половина периода)
+        pwm_set_gpio_level(TONE_PIN, period_us / 2);
+    }
+    
+    return true;
+}
+
 void platform_init(void)
 {
     stdio_init_all();
@@ -434,5 +479,7 @@ void platform_init(void)
     stream_channels[1] = dma_claim_unused_channel(true);
     irq_set_exclusive_handler(DMA_IRQ_0, on_stream_buffer);
     irq_set_enabled(DMA_IRQ_0, true);
+
+    platform_tone_init();
 
 }

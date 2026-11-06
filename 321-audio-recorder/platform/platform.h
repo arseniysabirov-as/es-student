@@ -3,6 +3,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+
+// генерация тона на GP20; 0 — выключить; false — частота вне 20..20000
+bool platform_tone_set(uint32_t freq_hz);
+
 // захват count отсчётов GP26 по будильнику с периодом period_us;
 // false — АЦП занят или count больше PLATFORM_CAPTURE_MAX
 #define PLATFORM_CAPTURE_MAX 2000
