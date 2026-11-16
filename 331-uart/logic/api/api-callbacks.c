@@ -17,10 +17,9 @@
 #include "edge-task/edge-task.h"
 #include "uart-task/uart-task.h"
 #include "block-task/block-task.h"
-#include <stdlib.h> // для strtol
-#include <ctype.h> // для isprint()
-#include <errno.h>
-#include <string.h>
+
+
+
 
 #define SCOPE_SAMPLES PLATFORM_BLOCK_MAX
 #define SCOPE_BAUD_MIN 9600
