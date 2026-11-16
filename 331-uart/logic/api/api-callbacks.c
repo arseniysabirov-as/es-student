@@ -31,7 +31,7 @@ static uint32_t last_uart_rx_errors = 0;
 
 #define BLOCK_SIZE 64
 
-static uint32_t scope_baud = 115200;
+static uint32_t current_scope_baud = 115200;
 
 static const char text_line[] = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 
@@ -70,18 +70,16 @@ static void print_scope_rx(const uint8_t *data, size_t size, uint32_t errors)
 static void print_scope(const uint16_t *samples, uint32_t count, uint32_t time_us)
 {
     (void)time_us;
-    
     // Возвращаем UART на стандартную скорость
     platform_uart_baud_set(PLATFORM_UART0, 115200);
     platform_uart_baud_set(PLATFORM_UART1, 115200);
 
-    // Печатаем заголовок с правильным форматом
+    // Печатаем заголовок с указанием скорости
     printf("scope: %u samples, %u Hz, %u baud, uart1 ", 
-           (unsigned)count, (unsigned)PLATFORM_SAMPLE_RATE_HZ, (unsigned)scope_baud);
+           (unsigned)count, (unsigned)PLATFORM_SAMPLE_RATE_HZ, 
+           (unsigned)current_scope_baud);
     print_bytes(last_uart_rx, last_uart_rx_size);
-    if (last_uart_rx_size > 0) {
-        printf(" ");
-    }
+    printf(" ");
     print_errors(last_uart_rx_errors);
     printf("\n");
 
@@ -201,7 +199,7 @@ static void cmd_scope(const command_t *command)
         return;
     }
 
-    scope_baud = baud; // Сохраняем для заголовка
+    current_scope_baud = baud; // Сохраняем для заголовка
 
     // 1. Меняем скорость обоим модулям
     platform_uart_baud_set(PLATFORM_UART0, baud);

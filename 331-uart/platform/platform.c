@@ -241,7 +241,10 @@ bool platform_uart_put(platform_uart_t uart, uint8_t byte)
 
 bool platform_uart_busy(platform_uart_t uart)
 {
-    return uart_get_hw(uart_of(uart))->fr & UART_UARTFR_BUSY_BITS;
+    uart_hw_t *hw = uart_get_hw(uart_of(uart));
+    // TXFE (1 - FIFO пуст, 0 - есть данные) и BUSY (1 - идет передача)
+    // Считаем занятым, если в очереди есть данные ИЛИ передатчик сейчас работает
+    return ((hw->fr & UART_UARTFR_TXFE_BITS) == 0) || ((hw->fr & UART_UARTFR_BUSY_BITS) != 0);
 }
 
 size_t platform_uart_read(platform_uart_t uart, uint8_t *data, size_t size)
