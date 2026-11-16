@@ -19,8 +19,49 @@
 #include <stdlib.h> // для strtol
 #include <ctype.h> // для isprint()
 #include <errno.h>
+#include <string.h>
 
+
+#define BLOCK_SIZE 64
 static const char text_line[] = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
+
+// print_errors(): err: none или err: и через пробел FE, PE, BE, OE по битам признаков
+static void print_errors(uint32_t errors)
+{
+    if (errors == 0) {
+        printf("err: none");
+        return;
+    }
+    printf("err:");
+    if (errors & PLATFORM_UART_FE) printf(" FE");
+    if (errors & PLATFORM_UART_PE) printf(" PE");
+    if (errors & PLATFORM_UART_BE) printf(" BE");
+    if (errors & PLATFORM_UART_OE) printf(" OE");
+}
+
+// print_block(): прерывание приёма запретить;
+// match — байты есть и совпадают с первыми байтами блока (memcmp);
+// block <irq|poll>: <принято>/64 <match|mismatch>, <признаки>
+static void print_block(const uint8_t *data, size_t size, uint32_t errors)
+{
+    // Сразу выключаем прерывание, чтобы буфер не менялся, пока мы его читаем
+    platform_uart_rx_irq_set(false);
+
+    // Проверяем, совпадает ли принятое с началом блока (0, 1, 2...)
+    bool match = false;
+    if (size > 0) {
+        uint8_t expected[BLOCK_SIZE];
+        for (int i = 0; i < BLOCK_SIZE; i++) expected[i] = i;
+        match = (memcmp(data, expected, size) == 0);
+    }
+
+    printf("block %s: %u/%u %s, ", 
+           (size == 64) ? "irq" : "poll",
+           (unsigned)size, (unsigned)BLOCK_SIZE,
+           match ? "match" : "mismatch");
+    print_errors(errors);
+    printf("\n");
+}
 
 static bool parse_u32(const char *text, uint32_t *value)
 {
@@ -43,20 +84,6 @@ static void print_bytes(const uint8_t *data, size_t size)
         char c = (char)data[i];
         putchar(isprint((unsigned char)c) ? c : '.');
     }
-}
-
-// print_errors(): err: none или err: и через пробел FE, PE, BE, OE по битам признаков
-static void print_errors(uint32_t errors)
-{
-    if (errors == 0) {
-        printf("err: none");
-        return;
-    }
-    printf("err:");
-    if (errors & PLATFORM_UART_FE) printf(" FE");
-    if (errors & PLATFORM_UART_PE) printf(" PE");
-    if (errors & PLATFORM_UART_BE) printf(" BE");
-    if (errors & PLATFORM_UART_OE) printf(" OE");
 }
 
 //парсер целых чисел со знаком (для baud_shift)
@@ -104,6 +131,43 @@ static void print_text(const uint8_t *data, size_t size, uint32_t errors)
     printf(" ");
     print_errors(errors);
     printf("\n");
+}
+
+// cmd_block(): аргумент irq или poll, иначе error: usage block irq|poll
+// заполнить блок номерами, прерывание приёма по аргументу,
+// обмен UART1 → UART0 с функцией print_block;
+// задача не приняла обмен — запретить прерывание, error: uart is busy
+static void cmd_block(const command_t *command)
+{
+    if (command->argc != 1) {
+        printf("error: usage block irq|poll\n");
+        return;
+    }
+
+    bool use_irq;
+    if (strcmp(command->argv[0], "irq") == 0) {
+        use_irq = true;
+    } else if (strcmp(command->argv[0], "poll") == 0) {
+        use_irq = false;
+    } else {
+        printf("error: usage block irq|poll\n");
+        return;
+    }
+
+    // Формируем блок 0, 1, 2, ..., 63
+    uint8_t block_data[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        block_data[i] = (uint8_t)i;
+    }
+
+    // Включаем или выключаем прерывание приёма
+    platform_uart_rx_irq_set(use_irq);
+
+    // Запускаем передачу UART1 -> UART0
+    if (!uart_task_start(PLATFORM_UART1, PLATFORM_UART0, block_data, BLOCK_SIZE, print_block)) {
+        platform_uart_rx_irq_set(false);
+        printf("error: uart is busy\n");
+    }
 }
 
 // cmd_baud_shift(): аргумент не одно целое число — error: usage baud_shift <percent>
@@ -458,6 +522,7 @@ const api_command_t api_commands[] = {
     { "baud_shift",         "shift UART1 baud rate: baud_shift <percent>",      cmd_baud_shift  },
     { "text",               "32 characters from UART1 to UART0",                cmd_text        },
     { "parity",             "parity of UART0 and UART1: parity <rx> <tx>",      cmd_parity      },
+     { "block",             "64 bytes from UART1 to UART0: block irq|poll",     cmd_block       },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);

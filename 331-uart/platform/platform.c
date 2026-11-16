@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "hardware/adc.h"
 #include "hardware/uart.h"
+#include "hardware/irq.h"
 
 #define LED_PIN     25u
 #define BUTTON_PIN  15u
@@ -22,6 +23,31 @@
 
 // Вывод линии
 #define LINE_PIN 22
+
+ // Буфер для прерывания ---
+#define RX_BUFFER_SIZE 128
+
+static volatile uint8_t rx_buffer[RX_BUFFER_SIZE];
+static volatile uint32_t rx_count = 0;
+
+// обработчик UART0_IRQ: забирает из очереди приёма всё, что там есть
+static void on_uart0_rx(void)
+{
+    while (uart_is_readable(uart0))
+    {
+        uint8_t byte = uart_get_hw(uart0)->dr & 0xff;
+        if (rx_count < RX_BUFFER_SIZE)
+        {
+            rx_buffer[rx_count++] = byte;
+        }
+    }
+}
+
+void platform_uart_rx_irq_set(bool on)
+{
+    // Разрешаем прерывание по заполнению очереди (4 байта) и по паузе
+    uart_set_irqs_enabled(uart0, on, false);
+}
 
 static uart_inst_t *uart_of(platform_uart_t uart)
 {
@@ -53,6 +79,9 @@ void platform_init(void)
     uart_init(uart1, UART_BAUD);
     gpio_set_function(UART1_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(UART1_RX_PIN, GPIO_FUNC_UART);
+
+    irq_set_exclusive_handler(UART0_IRQ, on_uart0_rx);
+    irq_set_enabled(UART0_IRQ, true);
 }
 
 void platform_led_set(bool on)
@@ -106,14 +135,15 @@ void platform_uart_loop_set(bool internal)
 void platform_uart_clear(platform_uart_t uart)
 {
     uart_inst_t *u = uart_of(uart);
-
-    while (uart_is_readable(u))
-    {
-        (void)uart_get_hw(u)->dr;
+    while (uart_is_readable(u)) {
+        (void)uart_get_hw(u)->dr; // чистим аппаратную очередь
     }
+    uart_get_hw(u)->rsr = 0; // сброс ошибок
 
-    // запись в UARTECR сбрасывает признаки ошибок
-    uart_get_hw(u)->rsr = 0;
+    // Очищаем наш программный буфер для UART0
+    if (uart == PLATFORM_UART0) {
+        rx_count = 0;
+    }
 }
 
 bool platform_uart_put(platform_uart_t uart, uint8_t byte)
@@ -140,8 +170,15 @@ size_t platform_uart_read(platform_uart_t uart, uint8_t *data, size_t size)
     uart_inst_t *u = uart_of(uart);
     size_t n = 0;
 
-    while (uart_is_readable(u) && n < size)
-    {
+    // 1. Сначала забираем данные из буфера прерывания (только для UART0)
+    if (uart == PLATFORM_UART0) {
+        for (uint32_t i = 0; i < rx_count && n < size; i++) {
+            data[n++] = rx_buffer[i];
+        }
+    }
+
+    // 2. Затем добираем то, что осталось в аппаратной очереди
+    while (uart_is_readable(u) && n < size) {
         data[n++] = uart_get_hw(u)->dr & 0xff;
     }
 
