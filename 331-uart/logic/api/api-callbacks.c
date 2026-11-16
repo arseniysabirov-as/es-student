@@ -15,6 +15,8 @@
 #include "button-task/button-task.h"
 #include "pi-task/pi-task.h"
 #include "edge-task/edge-task.h"
+#include "uart-task/uart-task.h"
+#include <ctype.h> // для isprint()
 
 static bool parse_u32(const char *text, uint32_t *value)
 {
@@ -28,6 +30,29 @@ static bool parse_u32(const char *text, uint32_t *value)
 
     *value = (uint32_t)number;
     return true;
+}
+
+// print_bytes(): байты подряд, непечатные (isprint() == 0) — точкой
+static void print_bytes(const uint8_t *data, size_t size)
+{
+    for (size_t i = 0; i < size; i++) {
+        char c = (char)data[i];
+        putchar(isprint((unsigned char)c) ? c : '.');
+    }
+}
+
+// print_errors(): err: none или err: и через пробел FE, PE, BE, OE по битам признаков
+static void print_errors(uint32_t errors)
+{
+    if (errors == 0) {
+        printf("err: none");
+        return;
+    }
+    printf("err:");
+    if (errors & PLATFORM_UART_FE) printf(" FE");
+    if (errors & PLATFORM_UART_PE) printf(" PE");
+    if (errors & PLATFORM_UART_BE) printf(" BE");
+    if (errors & PLATFORM_UART_OE) printf(" OE");
 }
 
 // ─── info ───────────────────────────────────────────────────
@@ -231,6 +256,62 @@ static void cmd_edge(const command_t *command)
     }
 }
 
+// print_echo(): rx: <принятое> <признаки>, например rx: ping err: none
+static void print_echo(const uint8_t *data, size_t size, uint32_t errors)
+{
+    printf("rx: ");
+    print_bytes(data, size);
+    printf(" ");
+    print_errors(errors);
+    printf("\n");
+}
+
+// cmd_loop(): аргумент internal или pins, иначе error: usage loop internal|pins
+// platform_uart_loop_set(), ответ loop: <аргумент>
+static void cmd_loop(const command_t *command)
+{
+    if (command->argc != 1) {
+        printf("error: usage loop internal|pins\n");
+        return;
+    }
+
+    if (strcmp(command->argv[0], "internal") == 0) {
+        platform_uart_loop_set(true);
+    } else if (strcmp(command->argv[0], "pins") == 0) {
+        platform_uart_loop_set(false);
+    } else {
+        printf("error: usage loop internal|pins\n");
+        return;
+    }
+    printf("loop: %s\n", command->argv[0]);
+}
+
+
+// cmd_echo(): аргумент не один — error: usage echo <text>
+// строка длиннее 32 символов — error: text longer than 32
+// задача не приняла обмен — error: uart is busy
+// иначе обмен UART0 → UART0 с функцией print_echo
+static void cmd_echo(const command_t *command)
+{
+    if (command->argc != 1) {
+        printf("error: usage echo <text>\n");
+        return;
+    }
+
+    const char *text = command->argv[0];
+    size_t len = strlen(text);
+
+    if (len > 32) {
+        printf("error: text longer than 32\n");
+        return;
+    }
+
+    if (!uart_task_start(PLATFORM_UART0, PLATFORM_UART0, (const uint8_t *)text, len, print_echo)) {
+        printf("error: uart is busy\n");
+    }
+}
+
+
 // ─── таблица команд ─────────────────────────────────────────
 const api_command_t api_commands[] = {
     { "info",            "device passport",                       cmd_info            },
@@ -245,6 +326,8 @@ const api_command_t api_commands[] = {
     { "profiling",       "stopwatch results",                     cmd_profiling       },
     { "profiling_reset", "reset stopwatches",                     cmd_profiling_reset },
     { "edge",               "rise and fall of the RC line: edge pp|od", cmd_edge },
+    { "loop",               "UART0 loopback: loop internal|pins",       cmd_loop },
+    { "echo",               "text through UART0 and back: echo <text>", cmd_echo },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);

@@ -1,0 +1,62 @@
+задание: 3.3.2
+проект: 331-uart
+устройство: 2e8a:000a
+серийный номер: 5054316520DB8A1C
+порт: COM7
+начало: 2026-11-16T10:47:10
+   0.000 --> 
+   0.556 --> help
+   0.557 <-- help
+   0.557 <-- help             list of commands
+   0.557 <-- info             device passport
+   0.557 <-- uptime           time since reset
+   0.557 <-- led_enable       turn led on
+   0.557 <-- led_disable      turn led off
+   0.557 <-- led_blink        make led blink
+   0.557 <-- led_period       set blink period: led_period <ms>
+   0.558 <-- button           button state and press count
+   0.558 <-- pi_start         start pi calculation: pi_start [terms]
+   0.558 <-- pi               pi result or state
+   0.558 <-- profiling        stopwatch results
+   0.558 <-- profiling_reset  reset stopwatches
+   0.618 <-- edge             rise and fall of the RC line: edge pp|od
+   0.619 <-- loop             UART0 loopback: loop internal|pins
+   0.619 <-- echo             text through UART0 and back: echo <text>
+   1.609 --> info
+   1.672 <-- info
+   1.672 <-- name: es-uart
+   1.672 <-- version: 1.0.0
+   1.672 <-- project: 331-uart
+   1.672 <-- repo: https://github.com/arseniysabirov-as/es-student
+   1.672 <-- board: pico
+   1.672 <-- serial: 5054316520DB8A1C
+   1.672 <-- chip: manufacturer 0x927, part 0x0000, revision 2
+   1.672 <-- pico-sdk: 2.3.0
+   2.667 --> loop internal
+   2.728 <-- loop internal
+   2.728 <-- loop: internal
+   3.229 --> echo ping
+   3.291 <-- echo ping
+   3.291 <-- rx: ping err: none
+   3.791 --> echo 0123456789ABCDEFGHIJKLMNOPQRSTUV
+   3.853 <-- echo 0123456789ABCDEFGHIJKLMNOPQRSTUV
+   3.853 <-- rx: 0123456789ABCDEFGHIJKLMNOPQRSTUV err: none
+   4.353 --> loop pins
+   4.415 <-- loop pins
+   4.415 <-- loop: pins
+   4.915 --> echo ping
+   4.977 <-- echo ping
+   4.978 <-- rx: ping err: none
+   5.477 --> echo 0123456789ABCDEFGHIJKLMNOPQRSTUV
+   5.539 <-- echo 0123456789ABCDEFGHIJKLMNOPQRSTUV
+   5.539 <-- rx: 0123456789ABCDEFGHIJKLMNOPQRSTUV err: none
+   6.036 --> echo 0123456789ABCDEFGHIJKLMNOPQRSTUVW
+   6.097 <-- echo 0123456789ABCDEFGHIJKLMNOPQRSTUVW
+   6.097 <-- error: text longer than 32
+   6.599 --> echo
+   6.661 <-- echo
+   6.661 <-- error: usage echo <text>
+   7.158 --> loop xx
+   7.220 <-- loop xx
+   7.220 <-- error: usage loop internal|pins
+итог: отправлено кадров 12, принято строк 43
