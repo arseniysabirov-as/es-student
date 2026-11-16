@@ -34,9 +34,9 @@ int main(void)
     profiling_stopwatch_init(STOPWATCH_LED,     "led");
     profiling_stopwatch_init(STOPWATCH_BUTTON,  "button");
     profiling_stopwatch_init(STOPWATCH_PI,      "pi");
-    profiling_stopwatch_init(STOPWATCH_EDGE, "edge");
-    profiling_stopwatch_init(STOPWATCH_UART, "uart");
-    profiling_stopwatch_init(STOPWATCH_BLOCK, "block");
+    profiling_stopwatch_init(STOPWATCH_EDGE,    "edge");
+    profiling_stopwatch_init(STOPWATCH_UART,    "uart");
+    profiling_stopwatch_init(STOPWATCH_BLOCK,   "block");
 
 
     stdio_text_protocol_init();
