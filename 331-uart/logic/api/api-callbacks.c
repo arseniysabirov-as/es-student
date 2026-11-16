@@ -61,7 +61,7 @@ static void print_errors(uint32_t errors)
 
 static void print_scope_rx(const uint8_t *data, size_t size, uint32_t errors)
 {
-    // Сохраняем данные от UART, чтобы потом напечатать их вместе с осциллограммой
+    // Сохраняем данные от UART
     last_uart_rx_size = (size > sizeof(last_uart_rx)) ? sizeof(last_uart_rx) : size;
     memcpy(last_uart_rx, data, last_uart_rx_size);
     last_uart_rx_errors = errors;
@@ -70,15 +70,18 @@ static void print_scope_rx(const uint8_t *data, size_t size, uint32_t errors)
 static void print_scope(const uint16_t *samples, uint32_t count, uint32_t time_us)
 {
     (void)time_us;
+    
     // Возвращаем UART на стандартную скорость
     platform_uart_baud_set(PLATFORM_UART0, 115200);
     platform_uart_baud_set(PLATFORM_UART1, 115200);
 
-    // Печатаем заголовок
+    // Печатаем заголовок с правильным форматом
     printf("scope: %u samples, %u Hz, %u baud, uart1 ", 
            (unsigned)count, (unsigned)PLATFORM_SAMPLE_RATE_HZ, (unsigned)scope_baud);
     print_bytes(last_uart_rx, last_uart_rx_size);
-    printf(" ");
+    if (last_uart_rx_size > 0) {
+        printf(" ");
+    }
     print_errors(last_uart_rx_errors);
     printf("\n");
 
@@ -86,7 +89,6 @@ static void print_scope(const uint16_t *samples, uint32_t count, uint32_t time_u
     for (uint32_t i = 0; i < count; i++) {
         if (i % 16 == 0) {
             if (i > 0) printf("\n");
-            // Опционально: можно выводить префикс, но задание просит просто числа
         }
         printf("%u", (unsigned)samples[i]);
         if (i % 16 != 15 && i != count - 1) printf(" ");
@@ -199,23 +201,26 @@ static void cmd_scope(const command_t *command)
         return;
     }
 
+    scope_baud = baud; // Сохраняем для заголовка
+
     // 1. Меняем скорость обоим модулям
     platform_uart_baud_set(PLATFORM_UART0, baud);
     platform_uart_baud_set(PLATFORM_UART1, baud);
-    scope_baud = baud;
 
-    // 2. Запускаем захват (сначала запускаем захват, чтобы поймать линию до старта)
+    // 2. Сначала запускаем передачу UART (быстро), чтобы приемник успел сохранить данные
+    if (!uart_task_start(PLATFORM_UART0, PLATFORM_UART1, (const uint8_t *)text, len, print_scope_rx)) {
+        platform_uart_baud_set(PLATFORM_UART0, 115200);
+        platform_uart_baud_set(PLATFORM_UART1, 115200);
+        printf("error: uart is busy\n");
+        return;
+    }
+
+    // 3. Затем запускаем захват (долго — 8.2 мс)
     if (!block_task_start(SCOPE_SAMPLES, print_scope)) {
         platform_uart_baud_set(PLATFORM_UART0, 115200);
         platform_uart_baud_set(PLATFORM_UART1, 115200);
         printf("error: adc busy\n");
         return;
-    }
-
-    // 3. Запускаем передачу UART
-    if (!uart_task_start(PLATFORM_UART0, PLATFORM_UART1, (const uint8_t *)text, len, print_scope_rx)) {
-        // Если UART занят (маловероятно), сбрасываем всё
-        printf("error: uart is busy\n");
     }
 }
 
