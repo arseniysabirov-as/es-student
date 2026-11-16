@@ -3,6 +3,7 @@
 #include "hardware/adc.h"
 #include "hardware/uart.h"
 #include "hardware/irq.h"
+#include "hardware/dma.h"
 
 #define LED_PIN     25u
 #define BUTTON_PIN  15u
@@ -27,8 +28,78 @@
  // Буфер для прерывания ---
 #define RX_BUFFER_SIZE 128
 
+
 static volatile uint8_t rx_buffer[RX_BUFFER_SIZE];
 static volatile uint32_t rx_count = 0;
+
+// (в enum adc_user_t)
+typedef enum {
+    ADC_FREE,
+    ADC_CAPTURE,
+    ADC_STREAM,
+    ADC_BLOCK,    
+} adc_user_t;
+
+static volatile adc_user_t adc_user = ADC_FREE;
+
+static int block_channel;
+static uint16_t block_samples[PLATFORM_BLOCK_MAX];
+static uint32_t block_start_us;
+static volatile uint32_t block_end_us;
+static volatile bool block_ready;
+
+// АЦП в непрерывном режиме с шагом 44,1 кГц, буфер АЦП с запросом DMA
+// на каждый отсчёт
+// АЦП в непрерывном режиме
+static void adc_free_running_fast(void)
+{
+    adc_select_input(ADC_CHANNEL);
+    adc_fifo_setup(true, true, 1, false, false); // 12-бит без сдвига
+    adc_set_clkdiv(0); // <-- МАКСИМАЛЬНАЯ СКОРОСТЬ (500 кГц)
+}
+
+static void adc_one_shot(void)
+{
+    adc_run(false);
+    adc_fifo_drain();
+    adc_fifo_setup(false, false, 0, false, false);
+    adc_set_clkdiv(0);
+}
+
+static void on_block_done(void)
+{
+    dma_channel_acknowledge_irq1(block_channel);
+    block_end_us = time_us_32();
+    adc_one_shot();
+    block_ready = true;
+    adc_user = ADC_FREE;
+}
+
+bool platform_block_start(uint32_t count)
+{
+    if (adc_user != ADC_FREE || count == 0 || count > PLATFORM_BLOCK_MAX) return false;
+    
+    adc_free_running_fast();
+
+    dma_channel_config cfg = dma_channel_get_default_config(block_channel);
+    channel_config_set_transfer_data_size(&cfg, DMA_SIZE_16);
+    channel_config_set_read_increment(&cfg, false);
+    channel_config_set_write_increment(&cfg, true);
+    channel_config_set_dreq(&cfg, DREQ_ADC);
+
+    block_ready = false;
+    adc_user = ADC_BLOCK;
+
+    dma_channel_configure(block_channel, &cfg, block_samples, &adc_hw->fifo, count, true);
+    block_start_us = time_us_32();
+    adc_run(true);
+    return true;
+}
+
+bool platform_block_done(void) { return block_ready; }
+const uint16_t *platform_block_samples(void) { return block_samples; }
+uint32_t platform_block_time_us(void) { return block_end_us - block_start_us; }
+
 
 // обработчик UART0_IRQ: забирает из очереди приёма всё, что там есть
 static void on_uart0_rx(void)
@@ -69,19 +140,27 @@ void platform_init(void)
     adc_gpio_init(ADC_PIN);
 
     gpio_init(LINE_PIN);
-    platform_line_set(PLATFORM_LINE_PUSH_PULL, false); // Изначально ноль
+    platform_line_set(PLATFORM_LINE_PUSH_PULL, false);
 
-    // делитель, формат 8N1, очереди, включение модуля
     uart_init(uart0, UART_BAUD);
-    platform_uart_loop_set(false); // по умолчанию выводы подключены к пинам
-
-    // platform_init() после настройки UART0)
     uart_init(uart1, UART_BAUD);
+    gpio_set_function(UART0_TX_PIN, GPIO_FUNC_UART);
+    gpio_set_function(UART0_RX_PIN, GPIO_FUNC_UART);
     gpio_set_function(UART1_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(UART1_RX_PIN, GPIO_FUNC_UART);
+    
+    rx_count = 0; // <-- ОБНУЛЯЕМ БУФЕР ПРИ СТАРТЕ
 
     irq_set_exclusive_handler(UART0_IRQ, on_uart0_rx);
     irq_set_enabled(UART0_IRQ, true);
+
+    // канал блока сообщает о конце через DMA_IRQ_1
+    block_channel = dma_claim_unused_channel(true);
+    dma_channel_set_irq1_enabled(block_channel, true);
+    irq_set_exclusive_handler(DMA_IRQ_1, on_block_done);
+    irq_set_enabled(DMA_IRQ_1, true);
+    
+    // stream_channels и platform_tone_init() удалены, так как они не нужны в 331-uart
 }
 
 void platform_led_set(bool on)

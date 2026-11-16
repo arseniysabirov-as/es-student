@@ -10,6 +10,7 @@
 #include "pi-task/pi-task.h"
 #include "edge-task/edge-task.h"
 #include "uart-task/uart-task.h"
+#include "block-task/block-task.h"
 
 typedef enum {
     STOPWATCH_LOOP,
@@ -19,6 +20,7 @@ typedef enum {
     STOPWATCH_PI,
     STOPWATCH_EDGE,
     STOPWATCH_UART,
+    STOPWATCH_BLOCK,
 } stopwatch_id_t;
 
 int main(void)
@@ -34,6 +36,7 @@ int main(void)
     profiling_stopwatch_init(STOPWATCH_PI,      "pi");
     profiling_stopwatch_init(STOPWATCH_EDGE, "edge");
     profiling_stopwatch_init(STOPWATCH_UART, "uart");
+    profiling_stopwatch_init(STOPWATCH_BLOCK, "block");
 
 
     stdio_text_protocol_init();
@@ -68,6 +71,10 @@ int main(void)
         profiling_start(STOPWATCH_UART);
         uart_task_handle();
         profiling_stop(STOPWATCH_UART);
+
+        profiling_start(STOPWATCH_BLOCK); 
+        block_task_handle();
+        profiling_stop(STOPWATCH_BLOCK);
 
         profiling_stop(STOPWATCH_LOOP);
     }

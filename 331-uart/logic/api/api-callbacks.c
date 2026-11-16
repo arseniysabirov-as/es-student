@@ -16,14 +16,32 @@
 #include "pi-task/pi-task.h"
 #include "edge-task/edge-task.h"
 #include "uart-task/uart-task.h"
+#include "block-task/block-task.h"
 #include <stdlib.h> // для strtol
 #include <ctype.h> // для isprint()
 #include <errno.h>
 #include <string.h>
 
+#define SCOPE_SAMPLES PLATFORM_BLOCK_MAX
+#define SCOPE_BAUD_MIN 9600
+#define SCOPE_TEXT_MAX 4
+
+static uint8_t  last_uart_rx[32];
+static size_t   last_uart_rx_size = 0;
+static uint32_t last_uart_rx_errors = 0;
 
 #define BLOCK_SIZE 64
 static const char text_line[] = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
+
+// print_bytes(): байты подряд, непечатные (isprint() == 0) — точкой
+static void print_bytes(const uint8_t *data, size_t size)
+{
+    for (size_t i = 0; i < size; i++) {
+        char c = (char)data[i];
+        putchar(isprint((unsigned char)c) ? c : '.');
+    }
+}
+
 
 // print_errors(): err: none или err: и через пробел FE, PE, BE, OE по битам признаков
 static void print_errors(uint32_t errors)
@@ -37,6 +55,41 @@ static void print_errors(uint32_t errors)
     if (errors & PLATFORM_UART_PE) printf(" PE");
     if (errors & PLATFORM_UART_BE) printf(" BE");
     if (errors & PLATFORM_UART_OE) printf(" OE");
+}
+
+static void print_scope_rx(const uint8_t *data, size_t size, uint32_t errors)
+{
+    // Сохраняем данные от UART, чтобы потом напечатать их вместе с осциллограммой
+    last_uart_rx_size = (size > sizeof(last_uart_rx)) ? sizeof(last_uart_rx) : size;
+    memcpy(last_uart_rx, data, last_uart_rx_size);
+    last_uart_rx_errors = errors;
+}
+
+static void print_scope(const uint16_t *samples, uint32_t count, uint32_t time_us)
+{
+    (void)time_us;
+    // Возвращаем UART на стандартную скорость
+    platform_uart_baud_set(PLATFORM_UART0, 115200);
+    platform_uart_baud_set(PLATFORM_UART1, 115200);
+
+    // Печатаем заголовок
+    printf("scope: %u samples, %u Hz, uart1 ", 
+           (unsigned)count, (unsigned)PLATFORM_SAMPLE_RATE_HZ);
+    print_bytes(last_uart_rx, last_uart_rx_size);
+    printf(" ");
+    print_errors(last_uart_rx_errors);
+    printf("\n");
+
+    // Печатаем отсчёты по 16 в строке
+    for (uint32_t i = 0; i < count; i++) {
+        if (i % 16 == 0) {
+            if (i > 0) printf("\n");
+            // Опционально: можно выводить префикс, но задание просит просто числа
+        }
+        printf("%u", (unsigned)samples[i]);
+        if (i % 16 != 15 && i != count - 1) printf(" ");
+    }
+    printf("\nscope: end\n");
 }
 
 // print_block(): прерывание приёма запретить;
@@ -75,15 +128,6 @@ static bool parse_u32(const char *text, uint32_t *value)
 
     *value = (uint32_t)number;
     return true;
-}
-
-// print_bytes(): байты подряд, непечатные (isprint() == 0) — точкой
-static void print_bytes(const uint8_t *data, size_t size)
-{
-    for (size_t i = 0; i < size; i++) {
-        char c = (char)data[i];
-        putchar(isprint((unsigned char)c) ? c : '.');
-    }
 }
 
 //парсер целых чисел со знаком (для baud_shift)
@@ -131,6 +175,45 @@ static void print_text(const uint8_t *data, size_t size, uint32_t errors)
     printf(" ");
     print_errors(errors);
     printf("\n");
+}
+
+static void cmd_scope(const command_t *command)
+{
+    if (command->argc != 2) {
+        printf("error: usage scope <baud> <text>\n");
+        return;
+    }
+
+    uint32_t baud;
+    if (!parse_u32(command->argv[0], &baud) || baud < SCOPE_BAUD_MIN || baud > 115200) {
+        printf("error: usage scope <baud> <text>\n");
+        return;
+    }
+
+    const char *text = command->argv[1];
+    size_t len = strlen(text);
+    if (len == 0 || len > SCOPE_TEXT_MAX) {
+        printf("error: usage scope <baud> <text>\n");
+        return;
+    }
+
+    // 1. Меняем скорость обоим модулям
+    platform_uart_baud_set(PLATFORM_UART0, baud);
+    platform_uart_baud_set(PLATFORM_UART1, baud);
+
+    // 2. Запускаем захват (сначала запускаем захват, чтобы поймать линию до старта)
+    if (!block_task_start(SCOPE_SAMPLES, print_scope)) {
+        platform_uart_baud_set(PLATFORM_UART0, 115200);
+        platform_uart_baud_set(PLATFORM_UART1, 115200);
+        printf("error: adc busy\n");
+        return;
+    }
+
+    // 3. Запускаем передачу UART
+    if (!uart_task_start(PLATFORM_UART0, PLATFORM_UART1, (const uint8_t *)text, len, print_scope_rx)) {
+        // Если UART занят (маловероятно), сбрасываем всё
+        printf("error: uart is busy\n");
+    }
 }
 
 // cmd_block(): аргумент irq или poll, иначе error: usage block irq|poll
@@ -522,7 +605,8 @@ const api_command_t api_commands[] = {
     { "baud_shift",         "shift UART1 baud rate: baud_shift <percent>",      cmd_baud_shift  },
     { "text",               "32 characters from UART1 to UART0",                cmd_text        },
     { "parity",             "parity of UART0 and UART1: parity <rx> <tx>",      cmd_parity      },
-     { "block",             "64 bytes from UART1 to UART0: block irq|poll",     cmd_block       },
+    { "block",              "64 bytes from UART1 to UART0: block irq|poll",     cmd_block       },
+    { "scope",              "UART0 line on ADC: scope <baud> <text>",           cmd_scope       },
 };
 
 const uint32_t api_command_count = sizeof(api_commands) / sizeof(api_commands[0]);
