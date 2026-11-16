@@ -187,38 +187,37 @@ static void cmd_scope(const command_t *command)
     }
 
     uint32_t baud;
-    if (!parse_u32(command->argv[0], &baud) || baud < SCOPE_BAUD_MIN || baud > 115200) {
+    if (!parse_u32(command->argv[0], &baud) || baud < 9600 || baud > 115200) {
         printf("error: usage scope <baud> <text>\n");
         return;
     }
 
     const char *text = command->argv[1];
     size_t len = strlen(text);
-    if (len == 0 || len > SCOPE_TEXT_MAX) {
+    if (len == 0 || len > 4) {
         printf("error: usage scope <baud> <text>\n");
         return;
     }
 
-    current_scope_baud = baud; // Сохраняем для заголовка
+    // 1. Сбрасываем старые данные
+    last_uart_rx_size = 0;
+    last_uart_rx_errors = 0;
 
-    // 1. Меняем скорость обоим модулям
+    // 2. Меняем скорость обоим модулям
     platform_uart_baud_set(PLATFORM_UART0, baud);
     platform_uart_baud_set(PLATFORM_UART1, baud);
 
-    // 2. Сначала запускаем передачу UART (быстро), чтобы приемник успел сохранить данные
-    if (!uart_task_start(PLATFORM_UART0, PLATFORM_UART1, (const uint8_t *)text, len, print_scope_rx)) {
-        platform_uart_baud_set(PLATFORM_UART0, 115200);
-        platform_uart_baud_set(PLATFORM_UART1, 115200);
-        printf("error: uart is busy\n");
-        return;
-    }
-
-    // 3. Затем запускаем захват (долго — 8.2 мс)
+    // 3. Запускаем захват ADC
     if (!block_task_start(SCOPE_SAMPLES, print_scope)) {
         platform_uart_baud_set(PLATFORM_UART0, 115200);
         platform_uart_baud_set(PLATFORM_UART1, 115200);
         printf("error: adc busy\n");
         return;
+    }
+
+    // 4. Запускаем передачу UART0 -> UART1
+    if (!uart_task_start(PLATFORM_UART0, PLATFORM_UART1, (const uint8_t *)text, len, print_scope_rx)) {
+        printf("error: uart is busy\n");
     }
 }
 
