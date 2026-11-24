@@ -3,14 +3,53 @@
 устройство: 2e8a:000a
 серийный номер: 5054316520DB8A1C
 порт: COM7
-начало: 2026-11-24T11:32:12
+начало: 2026-11-24T11:38:36
    0.000 --> help
    0.001 <-- help
-   0.001 <-- help             list of commands
+   0.002 <-- help             list of commands
    0.002 <-- i2c_write_reg    <address> <register> <value>
    0.003 <-- i2c_read_reg     <address> <register>
-   0.004 <-- spi_write        <cs> <command> <value>
+   0.003 <-- spi_write        <cs> <command> <value>
    0.004 <-- spi_read         <cs> <command> [pause_us]
    0.004 --> spi_read 0x01 0x8a
    0.005 <-- spi_read 0x01 0x8a
-   0.006 <-- spi: cs 0x01 command 0x8A value 0xFF
+   0.006 <-- error: usage spi_read <cs> <command> [pause_us]
+   0.006 --> i2c_read_reg 0x76 0xD0
+   0.007 <-- i2c_read_reg 0x76 0xD0
+   0.008 <-- i2c: addr 0x76 reg 0xD0 value 0x60
+   0.008 --> i2c_read_reg 0x43 0x01
+   0.009 <-- i2c_read_reg 0x43 0x01
+   0.009 <-- error: i2c transfer
+   0.009 --> spi_write 0x01 0x00 0x65
+   0.010 <-- spi_write 0x01 0x00 0x65
+   0.011 <-- spi: cs 0x01 command 0x00 sent 0x65
+   0.011 --> i2c_read_reg 0x42 0x01
+   0.012 <-- i2c_read_reg 0x42 0x01
+   0.013 <-- i2c: addr 0x42 reg 0x01 value 0x01
+   0.013 --> i2c_write_reg 0x42 0x01 0x00
+   0.014 <-- i2c_write_reg 0x42 0x01 0x00
+   0.015 <-- i2c: addr 0x42 reg 0x01 sent 0x00
+   0.015 --> spi_read 0x01 0x81 0x64
+   0.016 <-- spi_read 0x01 0x81 0x64
+   0.017 <-- spi: cs 0x01 command 0x81 value 0x00
+   0.017 --> i2c_write_reg 0x42 0x00 0x65
+   0.018 <-- i2c_write_reg 0x42 0x00 0x65
+   0.019 <-- i2c: addr 0x42 reg 0x00 sent 0x65
+   0.019 --> spi_read 0x01 0x81 0x64
+   0.020 <-- spi_read 0x01 0x81 0x64
+   0.021 <-- spi: cs 0x01 command 0x81 value 0x01
+   0.022 --> spi_write 0x01 0x01 0x02
+   0.023 <-- spi_write 0x01 0x01 0x02
+   0.023 <-- spi: cs 0x01 command 0x01 sent 0x02
+   0.023 --> i2c_read_reg 0x42 0x01
+   0.024 <-- i2c_read_reg 0x42 0x01
+   0.025 <-- i2c: addr 0x42 reg 0x01 value 0x01
+   0.025 --> i2c_read_reg 0x42 0x00
+   0.026 <-- i2c_read_reg 0x42 0x00
+   0.027 <-- i2c: addr 0x42 reg 0x00 value 0xFF
+   0.027 --> spi_write 0x01 0x00 0x64
+   0.028 <-- spi_write 0x01 0x00 0x64
+   0.029 <-- spi: cs 0x01 command 0x00 sent 0x64
+   0.029 --> i2c_read_reg 0x42 0x01
+   0.030 <-- i2c_read_reg 0x42 0x01
+   0.031 <-- i2c: addr 0x42 reg 0x01 value 0x00
