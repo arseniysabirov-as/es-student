@@ -22,6 +22,7 @@ target_link_libraries(platform PRIVATE
 add_library(logic STATIC
     logic/api/api.c
     logic/api/api-callbacks.c
+    logic/slave/slave.c
 )
 target_include_directories(logic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/logic)
 target_link_libraries(logic
