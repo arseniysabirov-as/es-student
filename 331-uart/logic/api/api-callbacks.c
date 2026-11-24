@@ -32,6 +32,13 @@ static uint32_t last_uart_rx_errors = 0;
 #define BLOCK_SIZE 64
 
 static uint32_t scope_baud = 115200;
+// Осциллограмма и приём приходят из разных задач. Печатать и трогать
+// скорость можно только когда есть оба: запись делителя PL011 во время
+// ещё идущего кадра портит байт в приёмнике.
+static bool scope_rx_ready;
+static bool scope_block_ready;
+static const uint16_t *scope_samples;
+static uint32_t scope_count;
 
 static const char text_line[] = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 
@@ -59,24 +66,19 @@ static void print_errors(uint32_t errors)
     if (errors & PLATFORM_UART_OE) printf(" OE");
 }
 
-static void print_scope_rx(const uint8_t *data, size_t size, uint32_t errors)
+static void scope_finish(void)
 {
-    // Сохраняем данные от UART, чтобы потом напечатать их вместе с осциллограммой
-    last_uart_rx_size = (size > sizeof(last_uart_rx)) ? sizeof(last_uart_rx) : size;
-    memcpy(last_uart_rx, data, last_uart_rx_size);
-    last_uart_rx_errors = errors;
-}
+    if (!scope_rx_ready || !scope_block_ready) return;
 
-static void print_scope(const uint16_t *samples, uint32_t count, uint32_t time_us)
-{
-    (void)time_us;
-    // Возвращаем UART на стандартную скорость
+    scope_rx_ready = false;
+    scope_block_ready = false;
+
+    // Байт уже скопирован из FIFO, теперь делитель можно вернуть
     platform_uart_baud_set(PLATFORM_UART0, 115200);
     platform_uart_baud_set(PLATFORM_UART1, 115200);
 
-    // Печатаем заголовок
-    printf("scope: %u samples, %u Hz, %u baud, uart1 ", 
-           (unsigned)count, 
+    printf("scope: %u samples, %u Hz, %u baud, uart1 ",
+           (unsigned)scope_count,
            (unsigned)PLATFORM_SAMPLE_RATE_HZ,
            (unsigned)scope_baud);
     print_bytes(last_uart_rx, last_uart_rx_size);
@@ -84,16 +86,30 @@ static void print_scope(const uint16_t *samples, uint32_t count, uint32_t time_u
     print_errors(last_uart_rx_errors);
     printf("\n");
 
-    // Печатаем отсчёты по 16 в строке
-    for (uint32_t i = 0; i < count; i++) {
-        if (i % 16 == 0) {
-            if (i > 0) printf("\n");
-            // Опционально: можно выводить префикс, но задание просит просто числа
-        }
-        printf("%u", (unsigned)samples[i]);
-        if (i % 16 != 15 && i != count - 1) printf(" ");
+    for (uint32_t i = 0; i < scope_count; i++) {
+        if (i % 16 == 0 && i > 0) printf("\n");
+        printf("%u", (unsigned)scope_samples[i]);
+        if (i % 16 != 15 && i != scope_count - 1) printf(" ");
     }
     printf("\nscope: end\n");
+}
+
+static void print_scope_rx(const uint8_t *data, size_t size, uint32_t errors)
+{
+    last_uart_rx_size = (size > sizeof(last_uart_rx)) ? sizeof(last_uart_rx) : size;
+    memcpy(last_uart_rx, data, last_uart_rx_size);
+    last_uart_rx_errors = errors;
+    scope_rx_ready = true;
+    scope_finish();
+}
+
+static void print_scope(const uint16_t *samples, uint32_t count, uint32_t time_us)
+{
+    (void)time_us;
+    scope_samples = samples;
+    scope_count = count;
+    scope_block_ready = true;
+    scope_finish();
 }
 
 // print_block(): прерывание приёма запретить;
@@ -201,6 +217,10 @@ static void cmd_scope(const command_t *command)
         return;
     }
     scope_baud = baud;
+    scope_rx_ready = false;
+    scope_block_ready = false;
+    last_uart_rx_size = 0;
+    last_uart_rx_errors = 0;
     // 1. Меняем скорость обоим модулям
     platform_uart_baud_set(PLATFORM_UART0, baud);
     platform_uart_baud_set(PLATFORM_UART1, baud);
@@ -215,8 +235,9 @@ static void cmd_scope(const command_t *command)
 
     // 3. Запускаем передачу UART
     if (!uart_task_start(PLATFORM_UART0, PLATFORM_UART1, (const uint8_t *)text, len, print_scope_rx)) {
-        // Если UART занят (маловероятно), сбрасываем всё
+        // Обмена не будет — осциллограмму всё равно отдаём, с пустым приёмом
         printf("error: uart is busy\n");
+        scope_rx_ready = true;
     }
 }
 
