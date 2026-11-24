@@ -1,10 +1,19 @@
-#include "slave/slave.h"      // (обратите внимание на путь, у нас папка logic в инклюдах)
+#include "slave/slave.h"
 #include "platform/platform.h"
-
 #include <stdatomic.h>
 
-// Состояние меняет обработчик I²C, а суперцикл читает его.
+// Общее состояние для обеих шин
 static _Atomic uint8_t led_state;
+
+// Состояние кадра SPI
+static enum {
+    SPI_COMMAND,
+    SPI_DATA,
+    SPI_DONE
+} spi_phase = SPI_COMMAND;
+
+static uint8_t spi_register;
+static bool spi_reading;
 
 static uint8_t read_register(uint8_t reg)
 {
@@ -23,6 +32,34 @@ static void write_register(uint8_t reg, uint8_t value)
     }
 }
 
+static void handle_spi_byte(uint8_t byte)
+{
+    switch (spi_phase) {
+    case SPI_COMMAND:
+        // Старший бит задает чтение (1) или запись (0). Младшие 7 — номер регистра.
+        spi_register = byte & 0x7F;
+        spi_reading = (byte & 0x80) != 0;
+        
+        if (spi_reading) {
+            platform_spi_slave_reply(read_register(spi_register));
+        } else {
+            platform_spi_slave_reply(0x00); // Заглушка при записи
+        }
+        spi_phase = SPI_DATA;
+        break;
+        
+    case SPI_DATA:
+        if (!spi_reading) {
+            write_register(spi_register, byte);
+        }
+        spi_phase = SPI_DONE;
+        break;
+        
+    case SPI_DONE:
+        break;
+    }
+}
+
 void slave_device_init(void)
 {
     platform_slave_init(SLAVE_I2C_ADDRESS, read_register, write_register);
@@ -30,5 +67,18 @@ void slave_device_init(void)
 
 void slave_device_handle(void)
 {
+    uint8_t byte;
+    // Опрашиваем буфер SPI
+    while (platform_spi_slave_receive(&byte)) {
+        handle_spi_byte(byte);
+    }
+
+    // Если CS поднялся (передача завершена), сбрасываем состояние для нового кадра
+    if (spi_phase != SPI_COMMAND && !platform_spi_slave_selected()) {
+        platform_spi_slave_reset();
+        spi_phase = SPI_COMMAND;
+    }
+
+    // Обновляем светодиод (общий для I2C и SPI)
     platform_led_set(atomic_load_explicit(&led_state, memory_order_relaxed) != 0);
 }

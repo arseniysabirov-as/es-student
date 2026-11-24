@@ -1,0 +1,16 @@
+задание: 4.1.5
+проект: 411-i2c-spi
+устройство: 2e8a:000a
+серийный номер: 5054316520DB8A1C
+порт: COM7
+начало: 2026-11-24T10:55:25
+   0.000 --> help
+   0.001 <-- help
+   0.002 <-- help             list of commands
+   0.003 <-- i2c_write_reg    <address> <register> <value>
+   0.004 <-- i2c_read_reg     <address> <register>
+   0.005 <-- spi_write        <cs> <command> <value>
+   0.006 <-- spi_read         <cs> <command> [pause_us]
+   0.006 --> spi_read 0x01 0x8a
+   0.007 <-- spi_read 0x01 0x8a
+   0.008 <-- spi: cs 0x01 command 0x8A value 0xFF
