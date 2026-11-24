@@ -5,19 +5,16 @@
 
 #define PLATFORM_SPI_CS_COUNT 2
 
+// --- Master (Core 0) ---
 void platform_master_init(void);
 
-// Запись байта в регистр
 bool platform_i2c_write(uint8_t address, uint8_t reg, uint8_t value);
-
-// Чтение байта из регистра (с повторным START)
 bool platform_i2c_read(uint8_t address, uint8_t reg, uint8_t *value);
 
 void platform_spi_write(uint8_t cs, uint8_t command, uint8_t value);
 uint8_t platform_spi_read(uint8_t cs, uint8_t command, uint8_t pause_us);
 
-// ---  Второе ядро и светодиод ---
-// -Ведомый I2C ---
+// --- Slave (Core 1) ---
 typedef uint8_t (*platform_register_read_t)(uint8_t reg);
 typedef void (*platform_register_write_t)(uint8_t reg, uint8_t value);
 
@@ -28,7 +25,7 @@ void platform_slave_init(uint8_t address,
                          platform_register_read_t read_register,
                          platform_register_write_t write_register);
 
-// --- SPI ведомый ---
+// --- SPI Slave (Core 1) ---
 void platform_spi_slave_reset(void);
 bool platform_spi_slave_selected(void);
 bool platform_spi_slave_receive(uint8_t *byte);
