@@ -3,6 +3,7 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "pico/multicore.h"
+#include "pico/i2c_slave.h"
 
 #define BUS_BAUD 100000
 #define I2C_TIMEOUT_US 10000
@@ -85,17 +86,59 @@ uint8_t platform_spi_read(uint8_t cs, uint8_t command, uint8_t pause_us)
     gpio_put(spi_cs_pins[cs], 1);
     return value;
 }
+// --- Ведомый I2C ---
+static platform_register_read_t i2c_read_register;
+static platform_register_write_t i2c_write_register;
+static uint8_t i2c_register;
+static enum { I2C_REGISTER, I2C_VALUE, I2C_DONE } i2c_phase;
+
+static void i2c_slave_event(i2c_inst_t *i2c, i2c_slave_event_t event)
+{
+    switch (event) {
+    case I2C_SLAVE_RECEIVE:
+        while (i2c_get_read_available(i2c)) {
+            uint8_t byte = i2c_read_byte_raw(i2c);
+            if (i2c_phase == I2C_REGISTER) {
+                i2c_register = byte;
+                i2c_phase = I2C_VALUE;
+            } else if (i2c_phase == I2C_VALUE) {
+                i2c_write_register(i2c_register, byte);
+                i2c_phase = I2C_DONE;
+            }
+        }
+        break;
+    case I2C_SLAVE_REQUEST:
+        i2c_write_byte_raw(i2c, i2c_read_register(i2c_register));
+        break;
+    case I2C_SLAVE_FINISH:
+        i2c_phase = I2C_REGISTER;
+        break;
+    }
+}
 
 void platform_start_core1(void (*entry)(void))
 {
     multicore_launch_core1(entry);
 }
 
-void platform_slave_init(void)
+void platform_slave_init(uint8_t address, 
+                         platform_register_read_t read_register,
+                         platform_register_write_t write_register)
 {
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_put(PICO_DEFAULT_LED_PIN, 0);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+
+    i2c_read_register = read_register;
+    i2c_write_register = write_register;
+    
+    i2c_init(i2c1, BUS_BAUD);
+    gpio_disable_pulls(6);
+    gpio_set_function(6, GPIO_FUNC_I2C);   // SDA (Slave)
+    gpio_disable_pulls(7);
+    gpio_set_function(7, GPIO_FUNC_I2C);   // SCL (Slave)
+    
+    i2c_slave_init(i2c1, address, i2c_slave_event);
 }
 
 void platform_led_set(bool on)
